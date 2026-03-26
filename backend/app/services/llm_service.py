@@ -6,44 +6,51 @@ client = Groq(api_key=GROQ_API_KEY)
 
 def extract_action_items(text: str):
     prompt = f"""
-You are an AI assistant that extracts structured information from meeting transcripts.
+You are an expert AI assistant that extracts structured insights from meeting transcripts.
 
-Extract:
-1. Decisions made
+Your task is to analyze the transcript and extract:
+
+1. Decisions made during the meeting
 2. Action items with:
-   - who (person responsible)
-   - task (what needs to be done)
+   - id (start from 1 and increment)
+   - who (person responsible; if unclear, write "Unassigned")
+   - task (clear, concise, professional wording)
    - deadline (if mentioned, else null)
 
-IMPORTANT:
+IMPORTANT INSTRUCTIONS:
 - Return ONLY valid JSON
-- No explanations
-- No extra text
+- DO NOT include markdown
+- DO NOT include explanations
+- Ensure valid JSON
 
-Format:
+OUTPUT FORMAT:
 {{
-  "decisions": ["..."],
+  "decisions": [
+    "Decision 1"
+  ],
   "action_items": [
     {{
-      "who": "...",
-      "task": "...",
-      "deadline": "..."
+      "id": 1,
+      "who": "Person Name",
+      "task": "Clear task description",
+      "deadline": "Day or null"
     }}
   ]
 }}
 
-Transcript:
+Now analyze this transcript:
+
 {text}
 """
 
     response = client.chat.completions.create(
-        model="llama-3.3-70b-versatile",
-        messages=[
-            {"role": "system", "content": "You output only valid JSON."},
-            {"role": "user", "content": prompt}
-        ],
-        temperature=0.2
-    )
+    model="llama-3.3-70b-versatile",
+    messages=[
+        {"role": "system", "content": "You ONLY return valid JSON. No markdown. No explanations."},
+        {"role": "user", "content": prompt}
+    ],
+    temperature=0.1
+)
 
     content = response.choices[0].message.content
 
