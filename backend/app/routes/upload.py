@@ -18,6 +18,11 @@ async def upload_file(file: UploadFile = File(...)):
 
     # 🔹 Step 1: Extract summary
     analysis = extract_action_items(text)
+    # ✅ Add status to action items
+    action_items = analysis.get("action_items", [])
+
+    for item in action_items:
+        item["status"] = "pending"
 
     # 🔹 Step 2: LLM segmentation
     segments = segment_transcript(text)
@@ -43,7 +48,28 @@ async def upload_file(file: UploadFile = File(...)):
             "emotion_score": float(emotion_data["confidence"]),
             "embedding": embedding
         })
+    
+# 🔍 Decision Traceability
+    decisions = analysis.get("decisions", [])
+    decision_traces = []
 
+    for decision in decisions:
+        matches = []
+        
+        for seg in processed_segments:
+            if any(word in seg["text"].lower() for word in decision.lower().split()):
+                matches.append({
+                "segment_id": seg["segment_id"],
+                "speaker": seg["speaker"],
+                "text": seg["text"]
+            })
+
+        decision_traces.append({
+        "decision": decision,
+        "evidence": matches[:2]
+        })
+
+    analysis["decision_traces"] = decision_traces    
     # 🔹 Step 3: Save meeting
     saved = add_meeting({
         "analysis": analysis,

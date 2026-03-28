@@ -5,6 +5,7 @@ from app.routes import meetings
 from app.routes import search
 from app.routes import chat
 from app.routes import analytics
+from app.routes import tasks
 
 app = FastAPI()
 
@@ -14,3 +15,5 @@ app.include_router(meetings.router)
 app.include_router(search.router)
 app.include_router(chat.router)
 app.include_router(analytics.router)
+app.include_router(tasks.router)
+
