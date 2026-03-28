@@ -1,10 +1,32 @@
 from pymongo import MongoClient
 import os
-from dotenv import load_dotenv
+import certifi
 
-load_dotenv()
+# 🔐 Load from env (or hardcode temporarily)
+MONGO_URI = os.getenv("MONGO_URI")
 
-client = MongoClient(os.getenv("MONGO_URI"))
+# 🚀 Robust MongoDB connection
+try:
+    client = MongoClient(
+        MONGO_URI,
+        tls=True,
+        tlsCAFile=certifi.where(),   # ✅ fixes SSL issues
+        serverSelectionTimeoutMS=5000  # faster failure
+    )
 
-db = client["meeting_db"]
-collection = db["meetings"]
+    # 🔥 Force connection test
+    client.admin.command("ping")
+    print("✅ MongoDB connected successfully")
+
+except Exception as e:
+    print("❌ MongoDB connection failed:", e)
+    client = None
+
+
+# 📦 Get DB + collection
+if client:
+    db = client["meeting_db"]
+    collection = db["meetings"]
+else:
+    db = None
+    collection = None

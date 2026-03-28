@@ -33,7 +33,7 @@ def search_meetings(query: str):
     }
 
 
-# 🔥 Semantic Search (FINAL CLEAN VERSION)
+
 @router.get("/semantic-search")
 def semantic_search(query: str, top_k: int = 3):
     meetings = get_all_meetings()
