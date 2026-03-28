@@ -1,21 +1,23 @@
 from fastapi import APIRouter
+
 from app.services.embedding_service import get_embedding
 from app.services.vector_service import search_vector
 from app.services.storage_service import get_meeting_by_id
+from app.services.reranker_service import rerank
 from app.services.chat_service import generate_answer
-from app.services.chat_service import client  # reuse Groq client
 
 router = APIRouter()
 
 
 @router.get("/chat")
 def chat(query: str):
-    # 🔢 Step 1: Embed query
+    # 🔢 Step 1: Convert query to embedding
     query_embedding = get_embedding(query)
 
     # 🔍 Step 2: Retrieve top 5 using FAISS
-    ids = search_vector(query_embedding, top_k=5)
+    ids = search_vector(query_embedding, top_k=10)
 
+    # 🛑 If no results
     if not ids:
         return {
             "query": query,
@@ -24,37 +26,13 @@ def chat(query: str):
             "sources": []
         }
 
+    # 📂 Step 3: Fetch meetings from DB
     meetings = [get_meeting_by_id(i) for i in ids if i]
 
-    # 🔥 Step 3: RERANK using LLM
-    ranking_text = ""
-    for i, m in enumerate(meetings):
-        ranking_text += f"{i}: {m['analysis']}\n"
+    # 🔥 Step 4: Rerank using BGE cross-encoder
+    selected_meetings = rerank(query, meetings)
 
-    ranking_prompt = f"""
-Select the 2 most relevant meetings for the query.
-
-Query: {query}
-
-Meetings:
-{ranking_text}
-
-Return ONLY a Python list like: [0,2]
-"""
-
-    ranking_response = client.chat.completions.create(
-        model="llama-3.3-70b-versatile",
-        messages=[{"role": "user", "content": ranking_prompt}]
-    )
-
-    try:
-        indices = eval(ranking_response.choices[0].message.content)
-    except:
-        indices = [0, 1]
-
-    selected_meetings = [meetings[i] for i in indices if i < len(meetings)]
-
-    # 🧠 Step 4: Build structured context
+    # 🧠 Step 5: Build structured context
     context = ""
 
     for idx, m in enumerate(selected_meetings, start=1):
@@ -62,21 +40,33 @@ Return ONLY a Python list like: [0,2]
 
         context += f"Meeting {idx} (ID: {m['_id']}):\n"
 
+        # Decisions
         decisions = analysis.get("decisions", [])
         if decisions:
             context += "Decisions:\n"
             for d in decisions:
                 context += f"- {d}\n"
 
+        # Action Items
         action_items = analysis.get("action_items", [])
         if action_items:
             context += "Action Items:\n"
             for a in action_items:
                 context += f"- {a.get('who')} → {a.get('task')} (Deadline: {a.get('deadline')})\n"
 
+        # Sentiment (if exists)
+        sentiment = analysis.get("sentiment")
+        score = analysis.get("sentiment_score")
+
+        if sentiment:
+            context += f"Sentiment: {sentiment}"
+            if score:
+                context += f" (confidence: {score})"
+            context += "\n"
+
         context += "\n"
 
-    # 🤖 Step 5: Generate answer
+    # 🤖 Step 6: Generate answer using LLM
     answer = generate_answer(query, context)
 
     return {
