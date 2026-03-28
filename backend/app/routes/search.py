@@ -1,11 +1,13 @@
 import numpy as np
 from fastapi import APIRouter
+
 from app.services.storage_service import get_all_meetings
 from app.services.embedding_service import get_embedding
 
 router = APIRouter()
 
 
+# 🔹 Keyword Search
 @router.get("/search")
 def search_meetings(query: str):
     meetings = get_all_meetings()
@@ -18,7 +20,6 @@ def search_meetings(query: str):
         decisions = analysis.get("decisions", [])
         action_items = analysis.get("action_items", [])
 
-        # Combine all searchable text
         combined_text = " ".join(decisions) + " " + " ".join(
             [item.get("task", "") for item in action_items]
         )
@@ -31,8 +32,10 @@ def search_meetings(query: str):
         "results": results
     }
 
+
+# 🔥 Semantic Search (FINAL CLEAN VERSION)
 @router.get("/semantic-search")
-def semantic_search(query: str):
+def semantic_search(query: str, top_k: int = 3):
     meetings = get_all_meetings()
 
     query_embedding = np.array(get_embedding(query))
@@ -40,23 +43,34 @@ def semantic_search(query: str):
     results = []
 
     for meeting in meetings:
-        emb = np.array(meeting.get("embedding", []))
+        emb = meeting.get("embedding")
 
-        if len(emb) == 0:
+        # 🚫 Skip if no embedding
+        if not emb:
             continue
 
-        # cosine similarity
+        emb = np.array(emb)
+
+        # 🧮 Cosine similarity
         similarity = np.dot(query_embedding, emb) / (
             np.linalg.norm(query_embedding) * np.linalg.norm(emb)
         )
 
-        results.append((similarity, meeting))
+        # ✅ Clean result object (BEST PRACTICE)
+        result_item = {
+            "_id": str(meeting["_id"]),
+            "analysis": meeting.get("analysis", {}),
+            "_score": round(float(similarity), 3),
+            "match_reason": "Matched based on semantic similarity"
+        }
 
-    results.sort(reverse=True, key=lambda x: x[0])
+        results.append(result_item)
 
-    top_results = [r[1] for r in results[:3]]
+    # 🔽 Sort results
+    results.sort(key=lambda x: x["_score"], reverse=True)
 
     return {
         "query": query,
-        "results": top_results
+        "top_k": top_k,
+        "results": results[:top_k]
     }
