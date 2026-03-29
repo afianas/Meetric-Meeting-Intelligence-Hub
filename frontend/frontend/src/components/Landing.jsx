@@ -11,10 +11,20 @@ export default function Landing({ onEnter }) {
         />
       </div>
 
-      {/* Open App button only — top right */}
+      {/* Full Navbar */}
       <div className="land-nav">
-        <div className="land-nav-cta">
-          <button onClick={onEnter}>Open App →</button>
+        <div className="land-nav-logo">
+          meetric<div className="land-nav-logo-dot"/>
+        </div>
+        <div className="land-nav-links">
+          <a>Platform</a>
+          <a>Security</a>
+          <a>Pricing</a>
+          <a>Customers</a>
+        </div>
+        <div className="land-nav-actions">
+          <div className="land-nav-login">Sign in</div>
+          <button className="land-btn-cta" onClick={onEnter}>Open App →</button>
         </div>
       </div>
 

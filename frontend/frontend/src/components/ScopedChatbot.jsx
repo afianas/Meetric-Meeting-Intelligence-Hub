@@ -48,7 +48,7 @@ export default function ScopedChatbot({ meeting }) {
               </div>
               {i===0 && suggestions.length>0 && (
                 <div style={{marginTop:8,display:"flex",flexDirection:"column",gap:5}}>
-                  {suggestions.map(s => <div key={s} style={{fontSize:11,color:"var(--text2)",cursor:"pointer",fontFamily:"var(--fm)",padding:"4px 9px",background:"var(--bg3)",borderRadius:6,border:"1px solid var(--border)"}} onClick={() => send(s)}>↗ {s}</div>)}
+                  {suggestions.map(s => <div key={s} style={{fontSize:11,color:"#475569",cursor:"pointer",fontFamily:"var(--fm)",padding:"5px 10px",background:"#fff",borderRadius:6,border:"1px solid #e2e8f0",transition:"all 0.2s"}} onMouseOver={(e) => {e.target.style.background="#fafafa";e.target.style.borderColor="#000";e.target.style.color="#000";}} onMouseOut={(e) => {e.target.style.background="#fff";e.target.style.borderColor="#e2e8f0";e.target.style.color="#475569";}} onClick={() => send(s)}>↗ {s}</div>)}
                 </div>
               )}
             </div>
