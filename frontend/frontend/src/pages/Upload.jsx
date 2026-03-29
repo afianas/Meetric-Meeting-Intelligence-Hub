@@ -1,88 +1,174 @@
 import { useState, useRef } from "react";
-import { DEMO_FILES } from "../data/mockData";
-import { exportFileCSV } from "../utils/exportUtils";
+import { apiClient } from "../utils/apiClient";
 
-export default function Upload() {
-  const [files, setFiles] = useState(DEMO_FILES);
+export default function Upload({ onUploadSuccess }) {
+  const [files, setFiles] = useState([]);
   const [drag, setDrag] = useState(false);
-  const [projName, setProjName] = useState("");
-  const [projDate, setProjDate] = useState("");
+  const [meetingName, setMeetingName] = useState("");
   const inputRef = useRef();
-  const cRef = useRef(files.length);
-  const groups = {};
-  files.forEach(f => { if (!groups[f.project]) groups[f.project]=[]; groups[f.project].push(f); });
 
-  const addFiles = (incoming) => {
-    const valid = Array.from(incoming).filter(f => f.name.endsWith(".txt")||f.name.endsWith(".vtt"));
-    if (!valid.length) return;
-    const proj = projName.trim()||"Unassigned";
-    const date = projDate||new Date().toISOString().slice(0,10);
-    const start = cRef.current; cRef.current += valid.length;
-    const added = valid.map(f => ({name:f.name,size:Math.max(1,Math.round(f.size/1024)),status:"proc",progress:0,project:proj,date,speakers:0,words:0}));
-    setFiles(p => [...p, ...added]);
-    added.forEach((_,i) => {
-      const fi = start+i; let prog = 0;
-      const iv = setInterval(() => {
-        prog += Math.random()*18+8;
-        if (prog>=100) { clearInterval(iv); setFiles(p => p.map((f,idx) => idx===fi?{...f,status:"done",progress:100,speakers:Math.floor(Math.random()*4)+2,words:Math.floor(Math.random()*8000)+3000}:f)); }
-        else setFiles(p => p.map((f,idx) => idx===fi?{...f,progress:Math.round(prog)}:f));
-      }, 200);
+  const handleUpload = async (incomingFiles) => {
+    const newFiles = Array.from(incomingFiles).map(f => {
+      const isValid = f.name.endsWith(".txt") || f.name.endsWith(".vtt");
+      return {
+        fileObj: f,
+        name: f.name,
+        resolvedName: meetingName.trim() || f.name.rsplit?.(".", 1)[0] || f.name,
+        size: Math.max(1, Math.round(f.size/1024)),
+        status: isValid ? "proc" : "error",
+        progress: 0,
+        errorMsg: isValid ? "" : "Unsupported format. Only .txt and .vtt are allowed."
+      };
     });
+
+    setFiles(p => [...p, ...newFiles]);
+
+    const validFiles = newFiles.filter(f => f.status === "proc");
+    for (const fileObj of validFiles) {
+        let progress = 0;
+        const progressInterval = setInterval(() => {
+            progress += Math.random() * 4 + 2;
+            if (progress > 90) progress = 90;
+            setFiles(p => p.map(f => f.name === fileObj.name && f.status === 'proc' 
+                ? { ...f, progress: Math.min(Math.round(progress), 90) } 
+                : f
+            ));
+        }, 500);
+
+        try {
+            const data = await apiClient.uploadTranscript(fileObj.fileObj, meetingName.trim());
+            
+            clearInterval(progressInterval);
+            setFiles(p => p.map(f => f.name === fileObj.name ? {
+                ...f,
+                status: "done",
+                progress: 100,
+                resolvedName: data.meeting_name || fileObj.resolvedName,
+                segmentsCount: data.segments_count || 0,
+                decisionsCount: data.analysis?.decisions?.length || 0,
+                actionsCount: data.analysis?.action_items?.length || 0,
+                speakersCount: data.speakers_identified || 0,
+                wordCount: data.word_count || 0,
+                date: data.analysis?.date || "Today",
+            } : f));
+
+            if (onUploadSuccess) onUploadSuccess();
+
+        } catch (error) {
+            clearInterval(progressInterval);
+            setFiles(p => p.map(f => f.name === fileObj.name ? {
+                ...f,
+                status: "error",
+                progress: 0,
+                errorMsg: error.message
+            } : f));
+        }
+    }
+  };
+
+  const handleClearDB = async () => {
+    if (!window.confirm("This will permanently delete ALL meetings from the database. Continue?")) return;
+    try {
+        const result = await apiClient.deleteAllMeetings();
+        alert(`Cleared: ${result.message}`);
+        if (onUploadSuccess) onUploadSuccess(); // refresh dashboard
+    } catch(err) {
+        alert("Failed to clear database: " + err.message);
+    }
   };
 
   return (
     <div className="content page">
+      {/* Meeting Name Input */}
       <div style={{background:"var(--surface)",border:"1px solid var(--border)",borderRadius:10,padding:"16px 20px",marginBottom:16}}>
-        <div style={{fontSize:12,fontFamily:"var(--fd)",fontSize:14,marginBottom:12,color:"var(--text)"}}>Group Settings</div>
-        <div className="up-meta-row">
-          <div className="up-meta-grp"><div className="up-lbl">Project Name</div><input className="up-inp" placeholder="e.g. Product Team, Q3 Finance…" value={projName} onChange={e => setProjName(e.target.value)}/></div>
-          <div className="up-meta-grp" style={{maxWidth:190}}><div className="up-lbl">Meeting Date</div><input className="up-inp" type="date" value={projDate} onChange={e => setProjDate(e.target.value)}/></div>
+        <div style={{fontSize:12,fontFamily:"var(--fm)",color:"var(--text3)",marginBottom:6,textTransform:"uppercase",letterSpacing:".06em"}}>Meeting Label</div>
+        <div style={{display:"flex",gap:12,alignItems:"center",flexWrap:"wrap"}}>
+          <input
+            className="up-inp"
+            style={{flex:1,minWidth:200}}
+            placeholder="e.g. Q3 Product Sync, API Review, Budget Meeting…"
+            value={meetingName}
+            onChange={e => setMeetingName(e.target.value)}
+          />
+          <div style={{fontSize:11,color:"var(--text3)",fontFamily:"var(--fm)",flexShrink:0}}>
+            Applied to next upload · leave blank to auto-name
+          </div>
         </div>
       </div>
-      <div className={`up-zone${drag?" drag":""}`} onDragOver={e => {e.preventDefault();setDrag(true);}} onDragLeave={() => setDrag(false)} onDrop={e => {e.preventDefault();setDrag(false);addFiles(e.dataTransfer.files);}} onClick={() => inputRef.current.click()}>
-        <input ref={inputRef} type="file" multiple accept=".txt,.vtt" className="up-hidden" onChange={e => {addFiles(e.target.files);e.target.value="";}} onClick={e => e.stopPropagation()}/>
+
+      {/* Drop Zone */}
+      <div
+        className={`up-zone${drag?" drag":""}`}
+        onDragOver={e => {e.preventDefault();setDrag(true);}}
+        onDragLeave={() => setDrag(false)}
+        onDrop={e => {e.preventDefault();setDrag(false);handleUpload(e.dataTransfer.files);}}
+        onClick={() => inputRef.current.click()}
+      >
+        <input ref={inputRef} type="file" multiple accept=".txt,.vtt" className="up-hidden"
+          onChange={e => {handleUpload(e.target.files);e.target.value="";}}
+          onClick={e => e.stopPropagation()}
+        />
         <div className="up-zone-icon">⬆</div>
         <div className="up-zone-title">Drop transcripts here</div>
         <div className="up-zone-sub">Drag & drop or click to browse · .txt and .vtt</div>
         <div className="up-formats">{[".txt",".vtt","WebVTT","Plain text"].map(f => <div key={f} className="fmt-badge">{f}</div>)}</div>
       </div>
-      {files.length>0 && (
+
+      {/* File Queue */}
+      {files.length > 0 && (
         <div style={{marginTop:20}}>
-          {Object.entries(groups).map(([proj, pfiles]) => (
-            <div key={proj}>
-              <div className="pg-hdr"><div className="pg-name">{proj}</div><div className="pg-cnt">— {pfiles.length} file{pfiles.length!==1?"s":""}</div></div>
-              {pfiles.map((f,i) => (
-                <div key={i} className="fs-card">
-                  <div className="fs-top">
-                    <div className="fs-icon">{f.name.endsWith(".vtt")?"📋":"📄"}</div>
-                    <div className="fs-info">
-                      <div className="fs-name">{f.name}</div>
-                      <div className="fs-proj">{f.project}{f.date?` · ${f.date}`:""}</div>
-                      {f.status==="proc" && <div className="prog-bar"><div className="prog-fill" style={{width:`${f.progress}%`}}/></div>}
-                    </div>
-                    <div className={`fs-stat st-${f.status}`}>{f.status==="done"?"✓ Indexed":f.status==="proc"?`${f.progress}%`:"Error"}</div>
-                    <div className="fs-del" onClick={() => setFiles(p => p.filter(x => x!==f))}>✕</div>
-                  </div>
-                  {f.status==="done" && (
-                    <>
-                      <div className="fs-summary">
-                        {[{lbl:"File",val:f.name},{lbl:"Date",val:f.date},{lbl:"Speakers",val:f.speakers},{lbl:"Words",val:f.words.toLocaleString()}].map(s => (
-                          <div key={s.lbl}><div className="fs-sum-lbl">{s.lbl}</div><div className="fs-sum-val" style={{fontSize:s.lbl==="File"?11:13,fontFamily:s.lbl==="File"?"var(--fm)":"var(--fd)"}}>{s.val}</div></div>
-                        ))}
-                      </div>
-                      <div className="fs-acts">
-                        <button className="fs-btn" onClick={() => exportFileCSV(f)}>↓ CSV</button>
-                        <div style={{flex:1}}/>
-                        <div style={{fontSize:10,color:"var(--text3)",fontFamily:"var(--fm)",alignSelf:"center"}}>{f.size} KB</div>
-                      </div>
-                    </>
-                  )}
+          <div className="pg-hdr">
+            <div className="pg-name">Upload Queue</div>
+            <div className="pg-cnt">— {files.length} file{files.length!==1?"s":""}</div>
+          </div>
+          {files.map((f,i) => (
+            <div key={i} className="fs-card">
+              <div className="fs-top">
+                <div className="fs-icon">{f.name.endsWith(".vtt")?"📋":"📄"}</div>
+                <div className="fs-info">
+                  <div className="fs-name">{f.resolvedName || f.name}</div>
+                  <div style={{fontSize:10,color:"var(--text3)",fontFamily:"var(--fm)",marginTop:2}}>{f.name}</div>
+                  {f.status==="proc" && <div className="prog-bar"><div className="prog-fill" style={{width:`${f.progress}%`}}/></div>}
+                  {f.status==="error" && <div style={{color:'#dc2626',fontSize:11,marginTop:4}}>⚠ {f.errorMsg}</div>}
                 </div>
-              ))}
+                <div className={`fs-stat st-${f.status}`}>
+                  {f.status==="done" ? "✓ Indexed" : f.status==="proc" ? `${f.progress}%` : "Error"}
+                </div>
+                <div className="fs-del" onClick={() => setFiles(p => p.filter(x => x!==f))}>✕</div>
+              </div>
+              {f.status==="done" && (
+                <div className="fs-summary">
+                  {[
+                    {lbl:"Meeting Date", val: f.date},
+                    {lbl:"Speakers",     val: f.speakersCount},
+                    {lbl:"Word Count",   val: f.wordCount.toLocaleString()},
+                    {lbl:"Decisions",    val: f.decisionsCount},
+                    {lbl:"Action Items", val: f.actionsCount},
+                  ].map((s, idx) => (
+                    <div key={idx}>
+                      <div className="fs-sum-lbl">{s.lbl}</div>
+                      <div className="fs-sum-val" style={{fontSize: s.lbl === "Meeting Name" ? 11 : 13, fontFamily: s.lbl === "Meeting Name" ? "var(--fm)" : "var(--fd)"}}>{s.val}</div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           ))}
         </div>
       )}
+
+      {/* Danger Zone */}
+      <div style={{marginTop:32,padding:"14px 20px",background:"var(--surface)",borderRadius:10,border:"1px solid var(--border)",display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:12}}>
+        <div>
+          <div style={{fontSize:12,fontFamily:"var(--fd)",color:"var(--text)",marginBottom:3}}>Clear All Meetings</div>
+          <div style={{fontSize:11,color:"var(--text3)",fontFamily:"var(--fm)"}}>Remove all existing meetings from the database. Use this to reset stale or untitled records.</div>
+        </div>
+        <button onClick={handleClearDB} style={{background:"#dc2626",color:"#fff",border:"none",borderRadius:6,padding:"8px 16px",fontSize:11,fontFamily:"var(--fm)",cursor:"pointer",whiteSpace:"nowrap"}}>
+          🗑 Clear All Meetings
+        </button>
+      </div>
     </div>
   );
 }
+
+

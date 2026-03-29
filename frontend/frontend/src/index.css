@@ -2244,6 +2244,58 @@ body {
   font-style: italic;
   max-height: 180px;
   overflow-y: auto;
-  margin-top: 14px;
   font-size: 13px;
+}
+
+/* ── TAB NAVIGATION ── */
+.tab-btn {
+  font-family: var(--fm);
+  font-size: 12px;
+  color: var(--text2);
+  padding: 8px 16px;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: all .2s;
+}
+
+.tab-btn:hover {
+  color: var(--text);
+}
+
+.tab-btn.active {
+  color: var(--text);
+  border-bottom-color: var(--text);
+  font-weight: 500;
+}
+
+/* ── TABLES ── */
+.md-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.md-table th {
+  padding: 12px 20px;
+  font-family: var(--fm);
+  font-size: 11px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  color: var(--text3);
+  border-bottom: 1px solid var(--border);
+  background: var(--bg3);
+}
+
+.md-table td {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: top;
+  color: var(--text);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.md-table tr:last-child td {
+  border-bottom: none;
 }

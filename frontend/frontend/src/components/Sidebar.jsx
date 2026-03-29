@@ -24,10 +24,9 @@ export default function Sidebar({ active, setActive, onHome }) {
         ))}
       </div>
       <div className="sb-footer">
-        <div className="sf"><div className="sf-v">5</div><div className="sf-l">Meetings</div></div>
-        <div className="sf"><div className="sf-v">{DECISIONS.length}</div><div className="sf-l">Decisions</div></div>
-        <div className="sf"><div className="sf-v">{INIT_ACTIONS.length}</div><div className="sf-l">Actions</div></div>
-        <div className="sf"><div className="sf-v">{INIT_ACTIONS.filter(a=>a.urgent&&!a.done).length}</div><div className="sf-l">Urgent</div></div>
+        <div className="sf"><div className="sf-v">?</div><div className="sf-l">Meetings</div></div>
+        <div className="sf"><div className="sf-v">?</div><div className="sf-l">Decisions</div></div>
+        <div className="sf"><div className="sf-v">?</div><div className="sf-l">Actions</div></div>
       </div>
     </div>
   );

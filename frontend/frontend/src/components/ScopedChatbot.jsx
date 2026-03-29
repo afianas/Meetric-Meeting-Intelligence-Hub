@@ -1,25 +1,35 @@
 import { useState, useRef, useEffect } from "react";
-import { SCOPED_QA } from "../data/mockData";
+import { apiClient } from "../utils/apiClient";
 
 export default function ScopedChatbot({ meeting }) {
-  const qa = SCOPED_QA[meeting.name] || {};
-  const suggestions = Object.keys(qa);
-  const [messages, setMessages] = useState([{role:"ai", text:`Scoped exclusively to "${meeting.name}". I can only answer from this transcript.`, citation:null}]);
+  const suggestions = ["Summarize the discussions", "What were the main blockers?", "What was decided regarding timelines?"];
+  const [messages, setMessages] = useState([{role:"ai", text:`Scoped implicitly to "${meeting.name}". Note: Backend FAISS searches globally, but I will prompt the LLM to focus on this context.`, citation:null}]);
   const [input, setInput] = useState("");
   const [thinking, setThinking] = useState(false);
   const bottomRef = useRef();
   useEffect(() => { bottomRef.current?.scrollIntoView({behavior:"smooth"}); }, [messages, thinking]);
 
-  const send = (text) => {
+  const send = async (text) => {
     const q = (text||input).trim(); if (!q||thinking) return;
     setInput("");
     setMessages(p => [...p, {role:"user", text:q, citation:null}]);
     setThinking(true);
-    setTimeout(() => {
-      const resp = qa[q] || {text:`No exact match in "${meeting.name}". Try one of the suggested questions.`, citation:{segment:"Full transcript searched",speakers:[],excerpt:null}};
-      setMessages(p => [...p, {role:"ai", text:resp.text, citation:{...resp.citation, meeting:meeting.name}}]);
-      setThinking(false);
-    }, 800 + Math.random()*500);
+    
+    try {
+        // We prepend context because the backend GET /chat currently lacks strict metadata filtering
+        const scopedQuery = `In the context of the meeting "${meeting.name}": ${q}`;
+        const data = await apiClient.queryChat(scopedQuery);
+        
+        setMessages(p => [...p, {role:"ai", text:data.answer, citation:{
+            segment: `${(data.sources||[]).length} segments leveraged`,
+            meeting: meeting.name,
+            excerpt: `Confidence: ${Math.round(data.confidence * 100)}%`
+        }}]);
+    } catch(err) {
+        setMessages(p => [...p, {role:"ai", text:"Server error.", citation:null}]);
+    } finally {
+        setThinking(false);
+    }
   };
 
   return (
@@ -39,8 +49,7 @@ export default function ScopedChatbot({ meeting }) {
                   <div className="sc-cite">
                     <div className="sc-cite-hd"><span>📌</span><span className="sc-cite-mtg">{m.citation.meeting}</span></div>
                     <div className="sc-cite-body">
-                      <div className="sc-cite-row"><span className="sc-cite-k">Segment</span><span className="sc-cite-v">{m.citation.segment}</span></div>
-                      {m.citation.speakers?.length>0 && <div className="sc-cite-row"><span className="sc-cite-k">Speakers</span><span className="sc-cite-v">{m.citation.speakers.join(", ")}</span></div>}
+                      <div className="sc-cite-row"><span className="sc-cite-k">Scope</span><span className="sc-cite-v">{m.citation.segment}</span></div>
                       {m.citation.excerpt && <div className="sc-cite-ex">{m.citation.excerpt}</div>}
                     </div>
                   </div>

@@ -18,7 +18,12 @@ def search_vector(query_vector, top_k=10):
 
     results = []
     for i in indices[0]:
-        if i < len(id_map):
+        if i >= 0 and i < len(id_map):
             results.append(id_map[i])
 
     return results
+
+def reset_vectors():
+    global id_map
+    index.reset()
+    id_map.clear()

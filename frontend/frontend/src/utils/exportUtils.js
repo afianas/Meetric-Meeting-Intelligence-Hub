@@ -25,3 +25,17 @@ export function exportActionsCSV(items) {
   ];
   dl(new Blob([rows.map(r => r.join(",")).join("\n")], { type: "text/csv" }), "meetric_tracker.csv");
 }
+
+export function exportDecisionsCSV(items) {
+  const rows = [
+    ["Decision", "Meeting", "Date", "Impact", "AI Rationale"],
+    ...items.map(i => [
+        `"${(i.title || i.content || "").replace(/"/g, '""')}"`, 
+        `"${(i.meetingName || i.meeting || "").replace(/"/g, '""')}"`,
+        i.date || "—", 
+        i.impact || "—", 
+        `"${(i.rationale || "None").replace(/"/g, '""')}"`
+    ])
+  ];
+  dl(new Blob([rows.map(r => r.join(",")).join("\n")], { type: "text/csv" }), "meetric_decisions.csv");
+}
