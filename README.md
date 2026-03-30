@@ -28,7 +28,7 @@
 
 ---
 
-## 3. Features (Detailed)
+## 3. Features 
 ### Decision and Action Item Extractor
 Uses Llama 3.3-70B with highly structured prompting to parse raw transcripts. It identifies:
 - **Decisions:** Key agreements and strategic shifts.
