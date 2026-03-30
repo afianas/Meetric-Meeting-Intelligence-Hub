@@ -2,7 +2,7 @@
 > An AI-powered meeting intelligence platform that converts raw transcripts into decisions, tasks, and searchable insights using a custom RAG pipeline.
 
 ## 🎥 Demo Video
-[![Meeting Intelligence Hub Demo](https://img.shields.io/badge/Demo-Watch%20Video-red?style=for-the-badge&logo=youtube)](https://drive.google.com/file/d/1aVgTTvdVwXiyZ7grBWzR9vFal8i4OhDy/view?usp=sharing)
+[![Meeting Intelligence Hub Demo](https://img.shields.io/badge/Demo-Watch%20Video-red?style=for-the-badge&logo=youtube)](https://drive.google.com/file/d/1aVgTTvdVwXiyZ7grBWzR9vFal8i4OhDy/view?usp=sharing](https://drive.google.com/file/d/1WTlDdmaEEmM7Zww5M5edbI-dc1ZTqQeX/view?usp=sharing))
 
 ## 1. Project Overview
 **Problem:** Meetings are unstructured, time-consuming, and difficult to track. Important decisions often get buried in lengthy transcripts, and action items are frequently lost or forgotten.
