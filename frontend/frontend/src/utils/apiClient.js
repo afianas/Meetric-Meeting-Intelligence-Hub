@@ -118,5 +118,27 @@ export const apiClient = {
   async querySearch(query) {
       const params = new URLSearchParams({ query });
       return fetchJSON(`/semantic-search?${params}`);
+  },
+
+  /**
+   * Downloads a meeting report as PDF/CSV.
+   * Route: POST /download?format=xyz
+   */
+  async downloadMeetingReport(meetingData, format = 'pdf') {
+      const response = await fetch(`${BASE_URL}/download?format=${format}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(meetingData)
+      });
+      if (!response.ok) throw new Error("Download failed");
+      
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `meeting_report.${format}`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
   }
 };

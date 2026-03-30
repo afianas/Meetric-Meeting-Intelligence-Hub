@@ -51,29 +51,42 @@ Emotion: {seg.get('emotion')}
     # Step 6: LLM answer
     answer = generate_answer(query, context)
 
-    # Step 7: Confidence
+    # Step 7: Confidence (Sigmoid with humanized floor)
     if scores:
         mean_logit = sum(scores) / len(scores)
-        mean_logit = max(min(mean_logit, 100), -100) # clip to prevent overflow
-        confidence = float(round(1 / (1 + math.exp(-mean_logit)), 3))
+        mean_logit = max(min(mean_logit, 100), -100)
+        prob = 1 / (1 + math.exp(-mean_logit))
+        confidence = float(max(prob, 0.05))
     else:
-        confidence = 0.1
+        confidence = 0.0
 
-    # Step 8: Build rich sources (meeting_id, speaker, text snippet, emotion)
-    # Deduplicate by meeting_id to count unique meetings
-    meeting_ids_seen = set()
+    # Step 8: Build rich sources (defensive field checks)
     rich_sources = []
+    seen_texts = set()
+    meeting_ids_seen = set()
     for seg in selected_segments:
-        meeting_id = seg.get("meeting_id", "unknown")
-        meeting_ids_seen.add(meeting_id)
+        # Check multiple possible text fields for robustness
+        snippet = seg.get("text") or seg.get("content") or seg.get("message") or ""
+        snippet = snippet.strip()
+        
+        # Deduplicate identical snippets for cleaner reporting
+        if not snippet or snippet in seen_texts:
+            continue
+        seen_texts.add(snippet)
+
         rich_sources.append({
-            "segment_id": seg.get("segment_id", ""),
-            "meeting_id": meeting_id,
+            "segment_id": seg.get("segment_id", "unknown"),
+            "meeting_id": seg.get("meeting_id", "unknown"),
             "speaker": seg.get("speaker", "Unknown"),
             "role": seg.get("role", ""),
-            "text": (seg.get("text", ""))[:300],   # trim to 300 chars for UI
-            "emotion": seg.get("emotion", "neutral"),
+            "text": snippet[:300],
+            "emotion": seg.get("emotion", "neutral")
         })
+        meeting_ids_seen.add(seg.get("meeting_id", "unknown"))
+
+    # If we found sources but confidence ended up 0, force a 5% floor
+    if rich_sources and confidence < 0.05:
+        confidence = 0.05
 
     return {
         "query": str(query),

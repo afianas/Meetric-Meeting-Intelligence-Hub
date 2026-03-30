@@ -17,3 +17,18 @@ app.include_router(chat.router)
 app.include_router(analytics.router)
 app.include_router(tasks.router)
 
+from app.services.storage_service import collection
+from app.services.vector_service import add_vector
+
+@app.on_event("startup")
+def load_all_vectors():
+    print("Loading existing vectors from MongoDB to FAISS RAM index...")
+    if collection is None:
+        return
+    count = 0
+    for meeting in collection.find({}, {"segments": 1}):
+        for seg in meeting.get("segments", []):
+            if "embedding" in seg and "segment_id" in seg:
+                add_vector(seg["embedding"], seg["segment_id"])
+                count += 1
+    print(f"Successfully loaded {count} vectors into FAISS.")

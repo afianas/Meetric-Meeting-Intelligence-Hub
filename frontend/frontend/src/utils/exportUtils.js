@@ -1,41 +1,64 @@
-export function dl(blob, name) {
-  const a = document.createElement("a");
-  a.href = URL.createObjectURL(blob);
-  a.download = name;
-  a.click();
-  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+import { apiClient } from "./apiClient";
+
+/**
+ * Modern Export Utilities
+ * Bridges UI data to the specialized Backend Download Service
+ */
+
+/**
+ * Exports a full meeting report (PDF or CSV)
+ * @param {Object} meeting - The Mapped UI Meeting Model
+ * @param {string} format - 'pdf' | 'csv'
+ */
+export async function exportMeetingReport(meeting, format = 'pdf') {
+  if (!meeting) return;
+
+  try {
+    // We send the 'rawMeeting' structure or a shaped analysis to the backend
+    // Backend download.py expects: { analysis: { decisions, action_items } }
+    const payload = {
+      analysis: {
+        meeting_name: meeting.name,
+        date: meeting.date,
+        overall_sentiment: meeting.sentiment,
+        summary: meeting.summary,
+        decisions: meeting.decisions.map(d => d.title),
+        action_items: meeting.actions.map(a => ({
+          who: a.who,
+          task: a.content,
+          deadline: a.deadline
+        }))
+      }
+    };
+
+    await apiClient.downloadMeetingReport(payload, format);
+  } catch (err) {
+    console.error("Export failed", err);
+    alert("Export failed. Please check the backend connection.");
+  }
 }
 
-export function exportFileCSV(f) {
-  const rows = [
-    ["Field", "Value"],
-    ["File", f.name],
-    ["Project", f.project],
-    ["Date", f.date],
-    ["Speakers", f.speakers],
-    ["Words", f.words]
-  ];
-  dl(new Blob([rows.map(r => r.join(",")).join("\n")], { type: "text/csv" }), `${f.name.replace(/\.[^.]+$/, "")}_summary.csv`);
+/**
+ * Legacy support for simple CSV exports (migrated to backend service)
+ */
+export async function exportActionsCSV(actions) {
+  const payload = {
+    analysis: {
+      action_items: actions.map(a => ({
+        who: a.who,
+        task: a.content,
+        deadline: a.deadline
+      }))
+    }
+  };
+  await apiClient.downloadMeetingReport(payload, 'csv');
 }
 
-export function exportActionsCSV(items) {
-  const rows = [
-    ["Content", "Who", "Deadline", "Meeting", "Status", "Urgent"],
-    ...items.map(i => [`"${i.content}"`, i.who, i.deadline || "—", `"${i.meeting}"`, i.done ? "Done" : "Pending", i.urgent ? "Yes" : "No"])
-  ];
-  dl(new Blob([rows.map(r => r.join(",")).join("\n")], { type: "text/csv" }), "meetric_tracker.csv");
-}
-
-export function exportDecisionsCSV(items) {
-  const rows = [
-    ["Decision", "Meeting", "Date", "Impact", "AI Rationale"],
-    ...items.map(i => [
-        `"${(i.title || i.content || "").replace(/"/g, '""')}"`, 
-        `"${(i.meetingName || i.meeting || "").replace(/"/g, '""')}"`,
-        i.date || "—", 
-        i.impact || "—", 
-        `"${(i.rationale || "None").replace(/"/g, '""')}"`
-    ])
-  ];
-  dl(new Blob([rows.map(r => r.join(",")).join("\n")], { type: "text/csv" }), "meetric_decisions.csv");
+export async function exportDecisionsCSV(decisions) {
+  const payload = {
+      analysis: {
+          decisions: decisions.map(d => d.title)
+      }
+  };
+  await apiClient.downloadMeetingReport(payload, 'csv');
 }

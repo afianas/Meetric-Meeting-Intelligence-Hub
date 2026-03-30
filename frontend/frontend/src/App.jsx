@@ -19,15 +19,15 @@ import MeetingDetail from "./pages/MeetingDetail";
 export default function App() {
   const [view, setView] = useState("landing"); // "landing" | "app"
   const [page, setPage] = useState("dashboard");
-  const [detail, setDetail] = useState(null);
+  const [selectedMeetingId, setSelectedMeetingId] = useState(null);
 
   // Global State for APIs
   const [meetings, setMeetings] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const fetchMeetings = useCallback(async () => {
-    setIsLoading(true);
+  const fetchMeetings = useCallback(async (showLoading = true) => {
+    if (showLoading) setIsLoading(true);
     setError(null);
     try {
       const rawData = await apiClient.getMeetings();
@@ -36,7 +36,7 @@ export default function App() {
       console.error(err);
       setError("Failed to connect to the backend server. Please ensure the FastAPI server is running.");
     } finally {
-      setIsLoading(false);
+      if (showLoading) setIsLoading(false);
     }
   }, []);
 
@@ -47,43 +47,59 @@ export default function App() {
 
   // Derived state to pass down action items (extracts from all meetings)
   const allActions = meetings.flatMap(m => m.actions || []);
+  const allDecisions = meetings.flatMap(m => m.decisions || []);
 
   const toggleAction = async (meetingId, taskId, currentDone) => {
+    // Optimistic UI update for instant feedback
+    setMeetings(prev => prev.map(m => m.id === meetingId ? {
+      ...m,
+      actions: (m.actions || []).map(a => a.id === taskId ? { ...a, done: !currentDone } : a)
+    } : m));
+
     try {
         await apiClient.updateTaskStatus(meetingId, taskId, !currentDone);
-        fetchMeetings(); // Refresh globally as source of truth
+        fetchMeetings(false); // Background refresh without spinner
     } catch(err) {
         console.error("Failed to update task", err);
         alert("Failed to update task. Is the backend running?");
+        fetchMeetings(false); // Revert optimistic update on failure
     }
   };
 
-  const openDetail = (m) => setDetail(m);
-  const closeDetail = () => setDetail(null);
-  const navTo = (p) => { setDetail(null); setPage(p); };
+  const openDetail = (m) => setSelectedMeetingId(m.id);
+  const closeDetail = () => setSelectedMeetingId(null);
+  const navTo = (p) => { setSelectedMeetingId(null); setPage(p); };
 
   if (view === "landing") {
     return <Landing onEnter={() => setView("app")}/>;
   }
 
   const renderContent = () => {
-    if (detail) return <MeetingDetail meeting={detail} onToggleAction={toggleAction} onRefresh={fetchMeetings} />;
+    const activeMeeting = selectedMeetingId ? meetings.find(m => m.id === selectedMeetingId) : null;
+
+    if (activeMeeting) return <MeetingDetail meeting={activeMeeting} onToggleAction={toggleAction} onRefresh={fetchMeetings} onClose={closeDetail} />;
+    
     switch(page) {
-      case "dashboard": return <Dashboard setPage={navTo} openDetail={openDetail} meetings={meetings} isLoading={isLoading} error={error} />;
+      case "dashboard": return <Dashboard setPage={navTo} openDetail={openDetail} meetings={meetings} isLoading={isLoading} error={error} onRefresh={fetchMeetings} />;
       case "upload":    return <Upload onUploadSuccess={fetchMeetings} />;
       case "decisions": return <Decisions meetings={meetings} isLoading={isLoading} />;
       case "tracker":   return <ActionTracker actions={allActions} onToggleAction={toggleAction} isLoading={isLoading} />;
-      case "chatbot":   return <Chatbot />;
+      case "chatbot":   return <Chatbot meetings={meetings} openDetail={openDetail} />;
       case "sentiment": return <Sentiment meetings={meetings} isLoading={isLoading} />;
-      default:          return <Dashboard setPage={navTo} openDetail={openDetail} meetings={meetings} isLoading={isLoading} error={error} />;
+      default:          return <Dashboard setPage={navTo} openDetail={openDetail} meetings={meetings} isLoading={isLoading} error={error} onRefresh={fetchMeetings} />;
     }
   };
 
   return (
     <div className="app-shell">
-      <Sidebar active={page} setActive={navTo} onHome={() => setView("landing")}/>
+      <Sidebar 
+        active={page} 
+        setActive={navTo} 
+        onHome={() => setView("landing")}
+        stats={{ meetings: meetings.length, decisions: allDecisions.length, actions: allActions.length }}
+      />
       <div className="main">
-        <Topbar page={page} isDetail={!!detail} onBack={closeDetail} meetingName={detail?.name}/>
+        <Topbar page={page} isDetail={!!selectedMeetingId} onBack={closeDetail} meetingName={meetings.find(m => m.id === selectedMeetingId)?.name}/>
         {renderContent()}
       </div>
     </div>

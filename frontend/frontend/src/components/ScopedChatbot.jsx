@@ -7,7 +7,11 @@ export default function ScopedChatbot({ meeting }) {
   const [input, setInput] = useState("");
   const [thinking, setThinking] = useState(false);
   const bottomRef = useRef();
-  useEffect(() => { bottomRef.current?.scrollIntoView({behavior:"smooth"}); }, [messages, thinking]);
+  useEffect(() => { 
+    if (messages.length > 1 || thinking) {
+      bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" }); 
+    }
+  }, [messages, thinking]);
 
   const send = async (text) => {
     const q = (text||input).trim(); if (!q||thinking) return;
@@ -21,9 +25,9 @@ export default function ScopedChatbot({ meeting }) {
         const data = await apiClient.queryChat(scopedQuery);
         
         setMessages(p => [...p, {role:"ai", text:data.answer, citation:{
-            segment: `${(data.sources||[]).length} segments leveraged`,
+            sources: data.sources || [],
             meeting: meeting.name,
-            excerpt: `Confidence: ${Math.round(data.confidence * 100)}%`
+            confidence: data.confidence
         }}]);
     } catch(err) {
         setMessages(p => [...p, {role:"ai", text:"Server error.", citation:null}]);
@@ -45,12 +49,30 @@ export default function ScopedChatbot({ meeting }) {
             <div style={{maxWidth:"85%"}}>
               <div className="sc-bub">
                 {m.text}
-                {m.citation?.segment && (
-                  <div className="sc-cite">
-                    <div className="sc-cite-hd"><span>📌</span><span className="sc-cite-mtg">{m.citation.meeting}</span></div>
-                    <div className="sc-cite-body">
-                      <div className="sc-cite-row"><span className="sc-cite-k">Scope</span><span className="sc-cite-v">{m.citation.segment}</span></div>
-                      {m.citation.excerpt && <div className="sc-cite-ex">{m.citation.excerpt}</div>}
+                {m.citation?.sources && m.citation.sources.length > 0 && (
+                  <div className="sc-cite" style={{marginTop: 14, borderTop:"1px dashed #e2e8f0", paddingTop:12}}>
+                    <div className="sc-cite-hd" style={{marginBottom: 10}}>
+                      <span style={{fontSize:9, color:"var(--text3)", textTransform:"uppercase", fontWeight:700, letterSpacing:"0.05em"}}>Verified Context Snippets</span>
+                    </div>
+                    <div className="sc-cite-sources" style={{display:"flex", flexDirection:"column", gap:8}}>
+                      {m.citation.sources.map((s, si) => {
+                        const snip = (s.text || "").trim();
+                        return (
+                          <div key={si} style={{padding:"10px 12px", background:"#fcfcfc", borderRadius:8, border:"1px solid #edf2f7", fontSize:11, boxShadow:"0 1px 2px rgba(0,0,0,0.02)"}}>
+                            <div style={{fontWeight:600, color:"var(--text1)", marginBottom:4, display:"flex", justifyContent:"space-between"}}>
+                              <span>{s.speaker}</span>
+                              <span style={{fontSize:9, color:"var(--text3)", fontWeight:400}}>{s.role}</span>
+                            </div>
+                            <div style={{color:"var(--text2)", fontStyle: snip ? "italic" : "normal", lineHeight:1.5}}>
+                              {snip ? `"${snip}"` : <span style={{color:"#94a3b8"}}>(Snippet content temporarily unavailable)</span>}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                    <div style={{marginTop:12, fontSize:10, color:"var(--text3)", fontFamily:"var(--fm)", display:"flex", alignItems:"center", gap:6}}>
+                       <div style={{width:6, height:6, borderRadius:"50%", background:"#10b981"}}/>
+                       AI Confidence: {Math.max(1, Math.round((m.citation.confidence || 0) * 100))}%
                     </div>
                   </div>
                 )}

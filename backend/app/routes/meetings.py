@@ -28,4 +28,4 @@ def remove_meeting(meeting_id: str):
     success = delete_meeting(meeting_id)
     if success:
         return {"deleted": meeting_id}
-    return {"error": "Meeting not found or already deleted"}
+    return {"error": "Meeting not found or already deleted"}

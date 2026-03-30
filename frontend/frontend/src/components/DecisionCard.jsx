@@ -29,7 +29,6 @@ export default function DecisionCard({ d }) {
             {d.meetingName && <span>{d.meetingName}</span>}
             {d.meetingName && d.date && <span> · </span>}
             {d.date && <span>{d.date}</span>}
-            {d.impact && <span className="dec-impact-badge">{d.impact}</span>}
           </div>
         </div>
         <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 4, flexShrink: 0 }}>
@@ -65,13 +64,6 @@ export default function DecisionCard({ d }) {
                 <div className="ev-text">"{ev.text}"</div>
               </div>
             ))}
-
-            {d.rationale && (
-              <div className="dec-rationale">
-                <span className="dec-rationale-label">AI Rationale</span>
-                <span className="dec-rationale-text">{d.rationale}</span>
-              </div>
-            )}
           </div>
         </div>
       )}

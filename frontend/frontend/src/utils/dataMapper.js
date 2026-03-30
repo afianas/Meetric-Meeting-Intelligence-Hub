@@ -17,10 +17,33 @@ export function mapMeetingToUIModel(rawMeeting) {
   const analysis = rawMeeting.analysis || {};
   const segments = rawMeeting.segments || [];
 
+  // Global emotion totals for this meeting (used for fallback sentiment)
+  const emotionTotals = { agreement: 0, conflict: 0, concern: 0, uncertainty: 0, neutral: 0 };
+  segments.forEach(seg => {
+    const emotion = (seg.emotion || 'neutral').toLowerCase();
+    const key = EMOTION_KEYS.includes(emotion) ? emotion : 'neutral';
+    emotionTotals[key] += 1;
+  });
+  const totalSegs = segments.length || 1;
+  const emotionSummary = {};
+  EMOTION_KEYS.forEach(k => { emotionSummary[k] = Math.round((emotionTotals[k] / totalSegs) * 100); });
+
   // ── Primitive fields ──────────────────────────────────────────────────────
   const name = analysis.meeting_name || 'Untitled Meeting';
   const date = analysis.date || 'Unknown Date';
-  const sentiment = (analysis.overall_sentiment || 'NEUTRAL').toUpperCase();
+  let sentiment = (analysis.overall_sentiment || 'NEUTRAL').toUpperCase();
+  
+  // 🔥 If the model returned Neutral, check if there's a more interesting dominant emotion in the segments
+  if (sentiment === 'NEUTRAL') {
+    let dominant = 'neutral';
+    let max = 0;
+    Object.entries(emotionSummary).forEach(([k, v]) => {
+      // Ignore neutral to prioritize finding the most significant semantic emotion
+      if (k !== 'neutral' && v > max) { max = v; dominant = k; }
+    });
+    // Override if the dominant non-neutral emotion has at least a 10% presence
+    if (max >= 10) sentiment = dominant.toUpperCase();
+  }
 
   const summaryParts = Array.isArray(analysis.summary)
     ? analysis.summary
@@ -132,16 +155,7 @@ export function mapMeetingToUIModel(rawMeeting) {
     };
   });
 
-  // Global emotion totals for this meeting
-  const emotionTotals = { agreement: 0, conflict: 0, concern: 0, uncertainty: 0, neutral: 0 };
-  segments.forEach(seg => {
-    const emotion = (seg.emotion || 'neutral').toLowerCase();
-    const key = EMOTION_KEYS.includes(emotion) ? emotion : 'neutral';
-    emotionTotals[key] += 1;
-  });
-  const totalSegs = segments.length || 1;
-  const emotionSummary = {};
-  EMOTION_KEYS.forEach(k => { emotionSummary[k] = Math.round((emotionTotals[k] / totalSegs) * 100); });
+  // (Emotion summary is now calculated at the top of the function)
 
   // Simple speakers list (for MeetingDetail stats)
   const speakers = Object.values(speakerStatsMap).map(s => ({
@@ -164,7 +178,7 @@ export function mapMeetingToUIModel(rawMeeting) {
     metrics: {
       duration: `${Math.floor(segments.length * 0.5)} min`,
       engagement: `${Math.floor(Math.random() * 20 + 75)}%`,
-      wordCount: analysis.word_count || segments.reduce((acc, s) => acc + (s.text||"").trim().split(/\s+/).length, 0),
+      wordCount: analysis.word_count || segments.reduce((acc, s) => acc + (s.text || "").trim().split(/\s+/).length, 0),
       actionCount: actions.length,
       decisionCount: decisions.length,
     },
