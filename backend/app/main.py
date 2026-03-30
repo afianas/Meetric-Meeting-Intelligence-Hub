@@ -18,17 +18,25 @@ app.include_router(analytics.router)
 app.include_router(tasks.router)
 
 from app.services.storage_service import collection
-from app.services.vector_service import add_vector
+from app.services.vector_service import add_vector, index, id_map
+
+last_load_error = None
 
 @app.on_event("startup")
 def load_all_vectors():
     print("Loading existing vectors from MongoDB to FAISS RAM index...")
     if collection is None:
+        print("❌ MongoDB collection not found. Skipping vector load.")
         return
     count = 0
-    for meeting in collection.find({}, {"segments": 1}):
-        for seg in meeting.get("segments", []):
-            if "embedding" in seg and "segment_id" in seg:
-                add_vector(seg["embedding"], seg["segment_id"])
-                count += 1
-    print(f"Successfully loaded {count} vectors into FAISS.")
+    try:
+        all_meetings = list(collection.find({}, {"_id": 1, "segments": 1}))
+        for meeting in all_meetings:
+            m_id = str(meeting["_id"])
+            for seg in meeting.get("segments", []):
+                if "embedding" in seg and "segment_id" in seg:
+                    add_vector(seg["embedding"], seg["segment_id"], m_id)
+                    count += 1
+        print(f"✅ Successfully loaded {count} vectors into FAISS.")
+    except Exception as e:
+        print(f"❌ Error loading vectors on startup: {e}")

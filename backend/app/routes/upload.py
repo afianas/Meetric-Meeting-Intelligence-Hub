@@ -114,9 +114,9 @@ async def upload_file(
 
     meeting_id = str(saved["_id"])
 
-    # 🔹 Step 4: Add to FAISS
+    # 🔹 Step 4: Add to FAISS (with strict meeting_id mapping)
     for seg in processed_segments:
-        add_vector(seg["embedding"], seg["segment_id"])
+        add_vector(seg["embedding"], seg["segment_id"], meeting_id)
 
     return {
         "id": meeting_id,

@@ -106,8 +106,9 @@ export const apiClient = {
    * Queries the global RAG chatbot.
    * Route: GET /chat
    */
-  async queryChat(query) {
+  async queryChat(query, meetingId = null) {
       const params = new URLSearchParams({ query });
+      if (meetingId) params.append('meeting_id', meetingId);
       return fetchJSON(`/chat?${params}`);
   },
 

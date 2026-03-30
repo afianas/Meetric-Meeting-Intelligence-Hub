@@ -1,0 +1,12 @@
+fastapi
+uvicorn[standard]
+pymongo
+certifi
+numpy
+sentence-transformers
+faiss-cpu
+groq
+python-dotenv
+python-multipart
+pydantic
+httpx

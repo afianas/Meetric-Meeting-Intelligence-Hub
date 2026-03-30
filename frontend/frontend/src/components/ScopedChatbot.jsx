@@ -3,7 +3,7 @@ import { apiClient } from "../utils/apiClient";
 
 export default function ScopedChatbot({ meeting }) {
   const suggestions = ["Summarize the discussions", "What were the main blockers?", "What was decided regarding timelines?"];
-  const [messages, setMessages] = useState([{role:"ai", text:`Scoped implicitly to "${meeting.name}". Note: Backend FAISS searches globally, but I will prompt the LLM to focus on this context.`, citation:null}]);
+  const [messages, setMessages] = useState([{role:"ai", text:`I can answer questions only about this meeting. How can I help?`, citation:null}]);
   const [input, setInput] = useState("");
   const [thinking, setThinking] = useState(false);
   const bottomRef = useRef();
@@ -20,9 +20,7 @@ export default function ScopedChatbot({ meeting }) {
     setThinking(true);
     
     try {
-        // We prepend context because the backend GET /chat currently lacks strict metadata filtering
-        const scopedQuery = `In the context of the meeting "${meeting.name}": ${q}`;
-        const data = await apiClient.queryChat(scopedQuery);
+        const data = await apiClient.queryChat(q, meeting.id);
         
         setMessages(p => [...p, {role:"ai", text:data.answer, citation:{
             sources: data.sources || [],
@@ -40,7 +38,7 @@ export default function ScopedChatbot({ meeting }) {
     <div className="scoped-chat">
       <div className="sc-hd">
         <div className="sc-hd-title">Meeting Q&A</div>
-        <div className="sc-scope-badge"><div className="sc-scope-dot"/>Scoped: {meeting.name.split(" ").slice(0,3).join(" ")}…</div>
+        <div className="sc-scope-badge"><div className="sc-scope-dot"/>🔒 Scoped to: {meeting.name}</div>
       </div>
       <div className="sc-msgs">
         {messages.map((m,i) => (

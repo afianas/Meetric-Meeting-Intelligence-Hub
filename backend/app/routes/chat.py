@@ -11,12 +11,12 @@ router = APIRouter()
 
 
 @router.get("/chat")
-def chat(query: str):
+def chat(query: str, meeting_id: str = None):
     # Step 1: Embed query
     query_embedding = get_embedding(query)
 
-    # Step 2: FAISS search (segments)
-    segment_ids = search_vector(query_embedding, top_k=10)
+    # Step 2: FAISS search (segments) - now supports optional meeting scoping
+    segment_ids = search_vector(query_embedding, meeting_id=meeting_id, top_k=10)
 
     if not segment_ids:
         return {

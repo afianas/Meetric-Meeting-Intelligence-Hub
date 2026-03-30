@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { apiClient } from "../utils/apiClient";
 
-const NO_ANSWER_SIGNAL = "no relevant information found";
+const NO_ANSWER_SIGNAL = "not found in the transcripts";
 
 function ConfidenceBadge({ score }) {
   const pct = Math.round(score * 100);
@@ -75,28 +75,39 @@ export default function Chatbot({ meetings = [], openDetail }) {
   useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages, thinking]);
 
   // Dynamic suggestions from real meeting names
-  const SUGGS = meetings.length > 0
-    ? [
-        `What were the key decisions in "${meetings[0].name}"?`,
-        "Who is handling the most action items?",
-        "Were there any urgent tasks discussed?",
-      ]
-    : [
-        "What were the key decisions made recently?",
-        "Who is handling the API integration?",
-        "Were there any delays discussed?",
-      ];
+  const [availableSuggestions, setAvailableSuggestions] = useState([]);
+  
+  useEffect(() => {
+    const defaultSuggs = meetings.length > 0
+      ? [
+          "Who is handling the most action items?",
+          "Summarize the main progress on key projects across all meetings.",
+          "Identify any recurring blockers or risks mentioned in help transcripts.",
+        ]
+      : [
+          "Who is handling the most action items?",
+          "What are the overarching themes of the recent transcripts?",
+          "Identify any recurring blockers or risks mentioned recently.",
+        ];
+    setAvailableSuggestions(defaultSuggs);
+  }, [meetings]);
 
   const send = async (text) => {
     const q = (text || input).trim();
     if (!q || thinking) return;
     setInput("");
+    
+    // Remove from suggestions if it was one of them
+    setAvailableSuggestions(prev => prev.filter(s => s.toLowerCase() !== q.toLowerCase()));
+    
     setMessages(p => [...p, { role: "user", text: q, data: null }]);
     setThinking(true);
 
     try {
       const data = await apiClient.queryChat(q);
-      const isNoAnswer = !data.answer || data.answer.toLowerCase().includes(NO_ANSWER_SIGNAL);
+      const isNoAnswer = !data.answer || 
+                         data.answer.toLowerCase().includes(NO_ANSWER_SIGNAL) || 
+                         data.answer.toLowerCase().includes("no relevant information");
       setMessages(p => [...p, {
         role: "ai",
         text: isNoAnswer ? null : data.answer,
@@ -204,7 +215,7 @@ export default function Chatbot({ meetings = [], openDetail }) {
             <div className="card-hd" style={{ marginBottom: 10 }}>
               <div className="card-title">Suggested queries</div>
             </div>
-            {SUGGS.map(s => (
+            {availableSuggestions.map(s => (
               <div key={s} className="sug-chip" onClick={() => send(s)}>{s}</div>
             ))}
           </div>
