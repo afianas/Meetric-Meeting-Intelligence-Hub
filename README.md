@@ -228,4 +228,4 @@ frontend/
    - *"Why did we decide to delay the project launch?"*
    - *"What were the three main concerns raised by the Finance Lead?"*
    - *"Who is responsible for the API documentation?"*
-8. **Source Attribution:** Notice how the AI answers provide **clickable citations** that link back to the exact meeting and timestamped segment.
+8. **Source Attribution:** Notice how the AI answers provide **clickable citations** that link back to the exact meeting and segment.
