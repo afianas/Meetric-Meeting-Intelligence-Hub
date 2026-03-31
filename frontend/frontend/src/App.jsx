@@ -15,7 +15,6 @@ import ActionTracker from "./pages/ActionTracker";
 import Chatbot from "./pages/Chatbot";
 import Sentiment from "./pages/Sentiment";
 import MeetingDetail from "./pages/MeetingDetail";
-import MeetingHistory from "./pages/MeetingHistory";
 
 export default function App() {
   const [view, setView] = useState("landing"); // "landing" | "app"
@@ -82,7 +81,6 @@ export default function App() {
     
     switch(page) {
       case "dashboard": return <Dashboard setPage={navTo} openDetail={openDetail} meetings={meetings} isLoading={isLoading} error={error} onRefresh={fetchMeetings} />;
-      case "history":   return <MeetingHistory meetings={meetings} openDetail={openDetail} onRefresh={fetchMeetings} isLoading={isLoading} />;
       case "upload":    return <Upload onUploadSuccess={fetchMeetings} />;
       case "decisions": return <Decisions meetings={meetings} isLoading={isLoading} />;
       case "tracker":   return <ActionTracker actions={allActions} onToggleAction={toggleAction} isLoading={isLoading} />;

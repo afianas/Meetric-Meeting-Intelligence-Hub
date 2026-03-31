@@ -4,6 +4,7 @@ import { exportActionsCSV, exportDecisionsCSV, exportMeetingReport } from "../ut
 
 export default function MeetingDetail({ meeting, onToggleAction, onRefresh, onClose }) {
   const [expandedDecId, setExpandedDecId] = useState(null);
+  const [activeTab, setActiveTab] = useState("insights"); // "insights" | "transcript"
 
   if (!meeting) return null;
 
@@ -61,91 +62,156 @@ export default function MeetingDetail({ meeting, onToggleAction, onRefresh, onCl
       </div>
 
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20, borderBottom: "1px solid var(--border)", paddingBottom: 12 }}>
-        <div style={{ fontFamily: "var(--fd)", fontSize: 14, color: "var(--text2)" }}>Summary & Extractions</div>
+        <div style={{ display: 'flex', gap: 20 }}>
+          <div 
+            style={{ 
+              fontFamily: "var(--fd)", 
+              fontSize: 16, 
+              color: activeTab === 'insights' ? "var(--text)" : "var(--text3)",
+              cursor: 'pointer',
+              borderBottom: activeTab === 'insights' ? '2px solid var(--text)' : 'none',
+              paddingBottom: 4
+            }} 
+            onClick={() => setActiveTab('insights')}
+          >
+            Insights & Extractions
+          </div>
+          <div 
+            style={{ 
+              fontFamily: "var(--fd)", 
+              fontSize: 16, 
+              color: activeTab === 'transcript' ? "var(--text)" : "var(--text3)",
+              cursor: 'pointer',
+              borderBottom: activeTab === 'transcript' ? '2px solid var(--text)' : 'none',
+              paddingBottom: 4
+            }} 
+            onClick={() => setActiveTab('transcript')}
+          >
+            Original Transcript
+          </div>
+        </div>
         <button className="tb-back" style={{ background: "var(--bg2)", color: "var(--text)" }} onClick={() => exportMeetingReport(meeting, 'pdf')}>↓ Download Full PDF Report</button>
       </div>
 
 
       <div style={{ flex: 1, minHeight: 0, overflowY: "auto" }}>
         <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: 24 }}>
-          <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
-
-            {/* Action Items Table */}
-            <div className="card" style={{ padding: 0, overflow: "hidden" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "16px 20px", borderBottom: "1px solid var(--border)" }}>
-                <div style={{ fontFamily: "var(--fd)", fontSize: 16 }}>Action Items ({doneCount}/{meetActions.length})</div>
-                <div style={{ display: "flex", gap: 8 }}>
-                  <button className="tb-back" style={{ fontSize: 10 }} onClick={() => exportActionsCSV(meetActions)}>CSV</button>
+          {activeTab === 'insights' ? (
+            <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+              {/* Action Items Table */}
+              <div className="card" style={{ padding: 0, overflow: "hidden" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "16px 20px", borderBottom: "1px solid var(--border)" }}>
+                  <div style={{ fontFamily: "var(--fd)", fontSize: 16 }}>Action Items ({doneCount}/{meetActions.length})</div>
+                  <div style={{ display: "flex", gap: 8 }}>
+                    <button className="tb-back" style={{ fontSize: 10 }} onClick={() => exportActionsCSV(meetActions)}>CSV</button>
+                  </div>
                 </div>
-              </div>
-              {meetActions.length > 0 && <div className="trk-prog" style={{ margin: "0 20px 16px" }}><div className="trk-bar"><div className="trk-fill" style={{ width: `${pct}%` }} /></div><div className="trk-lbl">{pct}%</div></div>}
+                {meetActions.length > 0 && <div className="trk-prog" style={{ margin: "0 20px 16px" }}><div className="trk-bar"><div className="trk-fill" style={{ width: `${pct}%` }} /></div><div className="trk-lbl">{pct}%</div></div>}
 
-              {meetActions.length === 0 ? (
-                <div style={{ padding: "20px", textAlign: "center", fontSize: 12, color: "var(--text3)", fontFamily: "var(--fm)" }}>No action items found.</div>
-              ) : (
-                <table className="md-table">
-                  <thead>
-                    <tr><th style={{ width: 40 }}>Status</th><th>What</th><th>Who</th><th>By When</th></tr>
-                  </thead>
-                  <tbody>
-                    {meetActions.map(a => (
-                      <tr key={a.id}>
-                        <td style={{ textAlign: "center" }}>
-                          <input type="checkbox" checked={a.done} onChange={() => onToggleAction(a.meetingId, a.id, a.done)} style={{ cursor: "pointer", transform: "scale(1.2)" }} />
-                        </td>
-                        <td style={{ fontWeight: 500 }}>{a.content}</td>
-                        <td style={{ fontFamily: "var(--fm)", fontSize: 12 }}>{a.who || "—"}</td>
-                        <td style={{ fontFamily: "var(--fm)", fontSize: 12 }}>{a.deadline || "—"}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              )}
-            </div>
-
-            {/* Decisions Table */}
-            <div className="card" style={{ padding: 0, overflow: "hidden" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "16px 20px", borderBottom: "1px solid var(--border)" }}>
-                <div style={{ fontFamily: "var(--fd)", fontSize: 16 }}>Traced Decisions ({meetDecs.length})</div>
-                <div style={{ display: "flex", gap: 8 }}>
-                  <button className="tb-back" style={{ fontSize: 10 }} onClick={() => exportDecisionsCSV(meetDecs)}>CSV</button>
-                </div>
-              </div>
-
-              {meetDecs.length === 0 ? (
-                <div style={{ padding: "20px", textAlign: "center", fontSize: 12, color: "var(--text3)", fontFamily: "var(--fm)" }}>No decisions recorded.</div>
-              ) : (
-                <table className="md-table">
-                  <thead><tr><th>Decision</th><th>Rationale & Evidence</th></tr></thead>
-                  <tbody>
-                    {meetDecs.map(d => {
-                      const isExp = expandedDecId === d.id;
-                      return (
-                        <tr key={d.id}>
-                          <td style={{ fontWeight: 500, minWidth: 200 }}>{d.title || d.content}</td>
-                          <td style={{ fontFamily: "var(--fm)", fontSize: 12 }}>
-                            <div style={{ cursor: "pointer", color: "#14b8a6", textDecoration: "underline" }} onClick={() => setExpandedDecId(isExp ? null : d.id)}>
-                              {isExp ? "Hide" : "View Details"}
-                            </div>
-                            {isExp && (
-                              <div style={{ marginTop: 8, padding: 10, background: "var(--bg3)", borderRadius: 6, border: "1px solid var(--border)" }}>
-                                <div><strong>Snippets:</strong> {d.evidence?.length || 0} found</div>
-                                {(d.evidence || []).map((ev, i) => (
-                                  <div key={i} style={{ marginTop: 6, paddingLeft: 8, borderLeft: "2px solid #ccc", fontStyle: "italic", color: "var(--text2)" }}>
-                                    "{ev.text}" — {ev.speaker}
-                                  </div>
-                                ))}
-                              </div>
-                            )}
+                {meetActions.length === 0 ? (
+                  <div style={{ padding: "20px", textAlign: "center", fontSize: 12, color: "var(--text3)", fontFamily: "var(--fm)" }}>No action items found.</div>
+                ) : (
+                  <table className="md-table">
+                    <thead>
+                      <tr><th style={{ width: 40 }}>Status</th><th>What</th><th>Who</th><th>By When</th></tr>
+                    </thead>
+                    <tbody>
+                      {meetActions.map(a => (
+                        <tr key={a.id}>
+                          <td style={{ textAlign: "center" }}>
+                            <input type="checkbox" checked={a.done} onChange={() => onToggleAction(a.meetingId, a.id, a.done)} style={{ cursor: "pointer", transform: "scale(1.2)" }} />
                           </td>
+                          <td style={{ fontWeight: 500 }}>{a.content}</td>
+                          <td style={{ fontFamily: "var(--fm)", fontSize: 12 }}>{a.who || "—"}</td>
+                          <td style={{ fontFamily: "var(--fm)", fontSize: 12 }}>{a.deadline || "—"}</td>
                         </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              )}
+                      ))}
+                    </tbody>
+                  </table>
+                )}
+              </div>
+
+              {/* Decisions Table */}
+              <div className="card" style={{ padding: 0, overflow: "hidden" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "16px 20px", borderBottom: "1px solid var(--border)" }}>
+                  <div style={{ fontFamily: "var(--fd)", fontSize: 16 }}>Traced Decisions ({meetDecs.length})</div>
+                  <div style={{ display: "flex", gap: 8 }}>
+                    <button className="tb-back" style={{ fontSize: 10 }} onClick={() => exportDecisionsCSV(meetDecs)}>CSV</button>
+                  </div>
+                </div>
+
+                {meetDecs.length === 0 ? (
+                  <div style={{ padding: "20px", textAlign: "center", fontSize: 12, color: "var(--text3)", fontFamily: "var(--fm)" }}>No decisions recorded.</div>
+                ) : (
+                  <table className="md-table">
+                    <thead><tr><th>Decision</th><th>Rationale & Evidence</th></tr></thead>
+                    <tbody>
+                      {meetDecs.map(d => {
+                        const isExp = expandedDecId === d.id;
+                        return (
+                          <tr key={d.id}>
+                            <td style={{ fontWeight: 500, minWidth: 200 }}>{d.title || d.content}</td>
+                            <td style={{ fontFamily: "var(--fm)", fontSize: 12 }}>
+                              <div style={{ cursor: "pointer", color: "#14b8a6", textDecoration: "underline" }} onClick={() => setExpandedDecId(isExp ? null : d.id)}>
+                                {isExp ? "Hide" : "View Details"}
+                              </div>
+                              {isExp && (
+                                <div style={{ marginTop: 8, padding: 10, background: "var(--bg3)", borderRadius: 6, border: "1px solid var(--border)" }}>
+                                  <div><strong>Snippets:</strong> {d.evidence?.length || 0} found</div>
+                                  {(d.evidence || []).map((ev, i) => (
+                                    <div key={i} style={{ marginTop: 6, paddingLeft: 8, borderLeft: "2px solid #ccc", fontStyle: "italic", color: "var(--text2)" }}>
+                                      "{ev.text}" — {ev.speaker}
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                )}
+              </div>
             </div>
-          </div>
+          ) : (
+            <div className="card" style={{ padding: '24px' }}>
+              <div style={{ fontFamily: "var(--fd)", fontSize: 20, marginBottom: 20 }}>Conversation Log</div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                {segments.map((seg, i) => (
+                  <div key={i} style={{ display: 'flex', gap: 12 }}>
+                    <div style={{ 
+                      width: 100, 
+                      flexShrink: 0, 
+                      fontFamily: "var(--fm)", 
+                      fontSize: 11, 
+                      color: 'var(--text3)', 
+                      textAlign: 'right',
+                      paddingTop: 4
+                    }}>
+                      {seg.speaker}
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontSize: 14, color: 'var(--text)' }}>{seg.text}</div>
+                      <div style={{ 
+                        display: 'inline-block', 
+                        marginTop: 4, 
+                        fontSize: 9, 
+                        padding: '1px 6px', 
+                        borderRadius: 10, 
+                        background: 'var(--bg3)', 
+                        color: 'var(--text2)',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.04em'
+                      }}>
+                        {seg.emotion}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Chatbot Column */}
           <div>

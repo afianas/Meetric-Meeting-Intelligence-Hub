@@ -3,7 +3,6 @@ import { DECISIONS, INIT_ACTIONS } from "../data/mockData";
 export default function Sidebar({ active, setActive, onHome, stats = { meetings: 0, decisions: 0, actions: 0 } }) {
   const nav = [
     { id: "dashboard", icon: "⬛", label: "Dashboard" },
-    { id: "history", icon: "☰", label: "Meeting History" },
     { id: "upload", icon: "↑", label: "Upload" },
     { id: "decisions", icon: "◈", label: "Decisions" },
     { id: "tracker", icon: "✓", label: "Action Tracker" },
