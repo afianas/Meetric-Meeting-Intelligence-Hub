@@ -12,7 +12,7 @@ export default function Topbar({ page, isDetail, onBack, meetingName }) {
       {isDetail && <div className="tb-back" onClick={onBack}>← Back</div>}
       <div className="tb-title">{isDetail ? meetingName : titles[page]}</div>
       <div className="tb-badge">v2.5</div>
-      <div className="tb-rag"><div className="tb-rag-dot"/><span>RAG active</span></div>
+      <div className="tb-rag"><div className="tb-rag-dot" /><span>RAG active</span></div>
     </div>
   );
 }

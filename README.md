@@ -40,6 +40,11 @@ Uses Llama 3.3-70B with highly structured prompting to parse raw transcripts. It
 - **Action Items:** Structured tasks including **Responsible Person**, **Task Description**, and **Deadline/Date**.
 This moves the system from "simple text storage" to "structured intelligence." Results are presented in a clean, readable table with an integrated export option.
 
+### Meeting History & Grouping
+A comprehensive archive of all processed transcripts. 
+- **Smart Grouping:** Toggle between **Chronological** (by meeting date) and **Thematic** (by meeting name) views.
+- **Bulk Management:** High-level overview of meeting stats (word counts, decision density) and the ability to purge stale records or clear the entire workspace.
+
 ### Action Item Tracking
 An execution layer that converts extracted action items into a managed state. Users can mark tasks as completion, providing a closed-loop system for meeting outcomes.
 
@@ -79,14 +84,14 @@ The architecture is designed to separate the **Intelligence Extraction** from th
 
 ## 5. Application Flow
 1.  **Dashboard Home:** Landing page displaying quick stats (transcript count, total action items, overall sentiment).
-2.  **Upload:** User uploads one or multiple `.txt` or `.vtt` transcripts via a drag-and-drop portal with real-time validation.
-3.  **Processing:** LLM extracts structured data (Who/What/When); the transcript is semantically segmented.
-2.  **Processing:** LLM extracts structured data; the transcript is split into semantic segments.
-3.  **Analysis:** Emotion analysis is performed per segment; decisions are matched to evidence segments.
-4.  **Embedding:** Segments are converted into 384-dim vectors via local MiniLM.
-5.  **Storage:** Metadata/Segments saved to MongoDB; Vectors re-indexed into FAISS on startup/upload.
-6.  **Retrieval:** Chat queries embed the input and perform a hybrid search (FAISS + BGE Rerank).
-7.  **Generation:** Groq LLM synthesizes an answer using only the retrieved, high-quality context.
+2.  **Meeting History:** Access a full repository of past meetings, grouped by date or recurring meeting name for easy retrieval.
+3.  **Upload:** User uploads one or multiple `.txt` or `.vtt` transcripts via a drag-and-drop portal.
+4.  **Processing:** LLM extracts structured data (decisions, action items) and partitions the transcript into semantic segments.
+5.  **Analysis:** Emotion analysis is performed per segment; decisions are matched to evidence segments for traceability.
+6.  **Embedding:** Segments are converted into 384-dim vectors via local MiniLM.
+7.  **Storage:** Metadata and segments are saved to MongoDB; vectors are indexed into FAISS.
+8.  **Retrieval:** Chat queries perform a hybrid search (FAISS + BGE Rerank).
+9.  **Generation:** Groq LLM synthesizes an answer using the retrieved, high-quality context.
 
 ---
 
@@ -228,4 +233,5 @@ frontend/
    - *"Why did we decide to delay the project launch?"*
    - *"What were the three main concerns raised by the Finance Lead?"*
    - *"Who is responsible for the API documentation?"*
-8. **Source Attribution:** Notice how the AI answers provide **clickable citations** that link back to the exact meeting and timestamped segment.
+8. **History Management:** Navigate to **Meeting History**. Toggle "Group by Name" to see how recurring weekly syncs are consolidated into a single thematic folder.
+9. **Source Attribution:** Notice how the AI answers provide **clickable citations** that link back to the exact meeting and timestamped segment.

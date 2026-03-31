@@ -1,11 +1,11 @@
 import { useState } from "react";
 
 const EMOTION_META = {
-  agreement:   { label: "Agreement",   cls: "emo-agreement"   },
-  conflict:    { label: "Conflict",     cls: "emo-conflict"    },
-  concern:     { label: "Concern",      cls: "emo-concern"     },
-  uncertainty: { label: "Uncertainty", cls: "emo-uncertainty"  },
-  neutral:     { label: "Neutral",      cls: "emo-neutral"     },
+  agreement: { label: "Agreement", cls: "emo-agreement" },
+  conflict: { label: "Conflict", cls: "emo-conflict" },
+  concern: { label: "Concern", cls: "emo-concern" },
+  uncertainty: { label: "Uncertainty", cls: "emo-uncertainty" },
+  neutral: { label: "Neutral", cls: "emo-neutral" },
 };
 
 function EmotionBadge({ emotion }) {

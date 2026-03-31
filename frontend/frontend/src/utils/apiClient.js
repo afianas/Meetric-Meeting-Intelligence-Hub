@@ -73,7 +73,7 @@ export const apiClient = {
    * Deletes ALL meetings from the database.
    * Route: DELETE /meetings/all
    */
-  async deleteAllMeetings() {
+  async clearAllMeetings() {
     return fetchJSON('/meetings/all', { method: 'DELETE' });
   },
 

@@ -45,9 +45,9 @@ export default function MeetingDetail({ meeting, onToggleAction, onRefresh, onCl
               lbl: "Sentiment",
               val: meeting.sentiment,
               c: meeting.sentiment === 'AGREEMENT' ? "#16a34a" :
-                 meeting.sentiment === 'CONFLICT' ? "#dc2626" :
-                 meeting.sentiment === 'CONCERN' ? "#ea580c" :
-                 meeting.sentiment === 'UNCERTAINTY' ? "#ca8a04" : "#64748b"
+                meeting.sentiment === 'CONFLICT' ? "#dc2626" :
+                  meeting.sentiment === 'CONCERN' ? "#ea580c" :
+                    meeting.sentiment === 'UNCERTAINTY' ? "#ca8a04" : "#64748b"
             },
             { lbl: "Decisions", val: meetDecs.length, c: "var(--text)" },
             { lbl: "Action Items", val: meetActions.length, c: "var(--text)" }
