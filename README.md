@@ -1,4 +1,4 @@
- 55# Meeting Intelligence Hub
+## Meeting Intelligence Hub
 > An AI-powered meeting intelligence platform that converts raw transcripts into decisions, tasks, and searchable insights using a custom RAG pipeline.
 
 ## 🎥 Demo Video
