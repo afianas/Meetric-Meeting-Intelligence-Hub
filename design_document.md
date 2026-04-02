@@ -16,10 +16,11 @@ The system is partitioned into three functional layers to ensure separation of c
 - **Intelligence Layer:** Groq-hosted Llama 3.3 for reasoning, FAISS for vector indexing, and BGE for high-fidelity embeddings.
 - **Execution Layer:** A task management system backed by MongoDB for state persistence and metadata tracking.
 - **Explainability Layer:** A custom mapping engine that correlates LLM outputs with source segments for auditability.
+- **Data Organization Layer:** A mutation-driven UI framework utilizing TanStack Query, enabling dynamic client-side sorting and grouping strategies with real-time synchronization during meeting modifications/deletions.
 
 ### Tech Stack
 - **Backend:** FastAPI (Python)
-- **Frontend:** React (Vite, Vanilla CSS)
+- **Frontend:** Next.js (App Router, Tailwind/Vanilla CSS) with TanStack Query for caching and synchronization
 - **Database:** MongoDB (Persistent storage for metadata and segments)
 - **Vector Store:** FAISS (Local in-memory indexing for semantic search)
 - **Embeddings:** `all-MiniLM-L6-v2` (384-dimension sentence embeddings)

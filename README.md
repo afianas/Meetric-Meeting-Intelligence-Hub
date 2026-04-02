@@ -22,7 +22,7 @@
 
 ## 2. Tech Stack
 - **Backend:** FastAPI (Python)
-- **Frontend:** React (Vite, Vanilla CSS)
+- **Frontend:** Next.js (App Router, Tailwind/Vanilla CSS) with TanStack Query for state management
 - **Database:** MongoDB (Persistent storage for metadata and segments)
 - **Vector Store:** FAISS (Local in-memory indexing for semantic search)
 - **Embeddings:** `all-MiniLM-L6-v2` (384-dimension sentence embeddings)
@@ -39,10 +39,12 @@ Uses Llama 3.3-70B with highly structured prompting to parse raw transcripts. It
 - **Action Items:** Structured tasks including **Responsible Person**, **Task Description**, and **Deadline/Date**.
 This moves the system from "simple text storage" to "structured intelligence." Results are presented in a clean, readable table with an integrated export option.
 
-### Meeting History & Grouping
-A comprehensive archive of all processed transcripts. 
-- **Smart Grouping:** Toggle between **Chronological** (by meeting date) and **Thematic** (by meeting name) views.
-- **Bulk Management:** High-level overview of meeting stats (word counts, decision density) and the ability to purge stale records or clear the entire workspace.
+### Meeting Management & Grouping
+A comprehensive and interactive archive of all processed transcripts. 
+- **Flexible Grouping:** Dynamically group your meetings chronologically (by date) or thematically (by project/meeting name) via seamless client-side filtering.
+- **Single Meeting Deletion:** Clean up your workspace by permanently deleting individual meetings with a single click.
+- **Clear All Workspaces:** Reset your environment with a safe, confirmed "Clear All" action.
+- **Real-time UI Synchronization:** Fully integrated with TanStack Query and backend mutations, ensuring instant, layout-shift-free updates across the dashboard.
 
 ### Action Item Tracking
 An execution layer that converts extracted action items into a managed state. Users can mark tasks as completion, providing a closed-loop system for meeting outcomes.
@@ -64,7 +66,7 @@ Identifies distinct speakers and analyzes the "emotional temperature" of every s
 The architecture is designed to separate the **Intelligence Extraction** from the **In-Memory Retrieval** layer for maximum performance.
 
 ```text
-[ React Frontend ]
+[ Next.js Frontend (TanStack Query) ]
         |
         v
 [ FastAPI Backend ] (Service-Based Architecture)

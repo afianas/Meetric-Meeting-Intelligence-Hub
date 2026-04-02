@@ -1,0 +1,295 @@
+"use client"
+
+import { useState, useRef, useEffect, Suspense } from "react"
+import { useSearchParams } from "next/navigation"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Input } from "@/components/ui/input"
+import { ChevronLeft, Download, Clock, Users, MessageSquare, CheckCircle2, Loader2, AlertCircle, FileText } from "lucide-react"
+import Link from "next/link"
+import { getMeeting, getMeetings, downloadReport, mapMeeting, mapDecision, mapActionItem, BackendMeeting, BackendSegment, updateTask } from "@/lib/api"
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
+
+const AVATAR_POOL = [
+  "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=50&h=50&fit=crop&crop=face",
+  "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=50&h=50&fit=crop&crop=face",
+  "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=50&h=50&fit=crop&crop=face",
+  "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=50&h=50&fit=crop&crop=face",
+]
+function avatarFor(name: string) {
+  let h = 0; for (let i = 0; i < name.length; i++) h = (h + name.charCodeAt(i)) % AVATAR_POOL.length; return AVATAR_POOL[h]
+}
+
+function emotionBadgeStyle(emotion: string): string {
+  const e = (emotion || "").toLowerCase()
+  if (["agreement", "joy"].includes(e)) return "bg-green-100 text-green-700"
+  if (["conflict", "anger"].includes(e)) return "bg-red-100 text-red-700"
+  if (["concern", "fear"].includes(e)) return "bg-yellow-100 text-yellow-700"
+  return "bg-gray-100 text-gray-600"
+}
+
+
+
+function TranscriptsContent() {
+  const queryClient = useQueryClient()
+  const searchParams = useSearchParams()
+  const meetingId = searchParams.get("id")
+
+  const { data: meeting, isLoading: loading, error } = useQuery({
+    queryKey: ['meeting', meetingId],
+    queryFn: () => getMeeting(meetingId!),
+    enabled: !!meetingId
+  })
+
+  // To list options if no meeting ID is provided
+  const { data: allMeetings = [], isLoading: loadingMeetings } = useQuery({
+    queryKey: ['meetings'],
+    queryFn: getMeetings,
+    enabled: !meetingId
+  })
+
+  const taskMutation = useMutation({
+    mutationFn: ({ taskId, status }: { taskId: number, status: string }) => updateTask(meetingId!, taskId, status),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['meeting', meetingId] })
+  })
+
+  const [activeSegmentId, setActiveSegmentId] = useState<string | null>(null)
+  const [downloading, setDownloading] = useState(false)
+  const segmentRefs = useRef<Record<string, HTMLDivElement>>({})
+
+  const scrollToSegment = (segmentId: string) => {
+    setActiveSegmentId(segmentId)
+    segmentRefs.current[segmentId]?.scrollIntoView({ behavior: "smooth", block: "center" })
+    setTimeout(() => setActiveSegmentId(null), 3000)
+  }
+
+
+
+
+
+  if (!meetingId) return (
+    <div className="flex flex-col items-center justify-center py-16 px-4 w-full">
+      <div className="text-center max-w-lg mb-8">
+        <h1 className="font-serif text-3xl font-semibold text-foreground">Select a Transcript</h1>
+        <p className="mt-2 text-muted-foreground">Choose a meeting from the list below to view its full transcript and extract insights.</p>
+      </div>
+
+      {loadingMeetings ? (
+        <div className="flex justify-center p-10"><Loader2 className="animate-spin h-6 w-6 text-muted-foreground" /></div>
+      ) : (allMeetings as BackendMeeting[]).length === 0 ? (
+        <div className="flex flex-col items-center py-12 gap-4">
+          <FileText className="h-10 w-10 text-muted-foreground/30" />
+          <p className="text-muted-foreground">No meetings found. Please upload a transcript first.</p>
+          <Link href="/app/upload"><Button>Go to Uploads</Button></Link>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 w-full max-w-5xl">
+          {(allMeetings as BackendMeeting[]).map(m => {
+            const mapped = mapMeeting(m);
+            return (
+              <Link href={`/app/transcripts?id=${m._id}`} key={m._id}>
+                <Card className="hover:border-primary/50 cursor-pointer transition-all hover:shadow-md h-full">
+                  <CardContent className="p-5 flex flex-col justify-between h-full gap-4">
+                    <div className="flex items-start gap-4">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 flex-shrink-0">
+                        <FileText className="h-5 w-5 text-primary" />
+                      </div>
+                      <div>
+                        <p className="font-medium text-foreground line-clamp-2">{mapped.title}</p>
+                        <p className="text-xs text-muted-foreground mt-1">{mapped.date}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3 text-xs text-muted-foreground mt-auto pt-2 border-t border-border/50">
+                      <span className="flex items-center gap-1"><Users className="h-3 w-3" /> {mapped.speakers}</span>
+                      <span className="flex items-center gap-1"><MessageSquare className="h-3 w-3" /> {mapped.words.toLocaleString()}w</span>
+                    </div>
+                  </CardContent>
+                </Card>
+              </Link>
+            )
+          })}
+        </div>
+      )}
+    </div>
+  )
+
+  if (loading) return (
+    <div className="space-y-6 animate-pulse">
+      <div className="h-8 w-64 rounded bg-muted" />
+      <div className="grid grid-cols-3 gap-4">{Array(3).fill(0).map((_, i) => <div key={i} className="h-40 rounded bg-muted" />)}</div>
+    </div>
+  )
+
+  if (error || !meeting) return (
+    <div className="flex flex-col items-center justify-center py-24 gap-4">
+      <AlertCircle className="h-10 w-10 text-red-400" />
+      <p className="text-muted-foreground">{error instanceof Error ? error.message : "Meeting not found"}</p>
+      <Link href="/app"><Button variant="outline">← Back to Dashboard</Button></Link>
+    </div>
+  )
+
+  const mapped = mapMeeting(meeting as BackendMeeting)
+  const segments: BackendSegment[] = (meeting as BackendMeeting).segments || []
+  const decisions = ((meeting as BackendMeeting).analysis?.decisions || []).map((d, i) => mapDecision(d, i, (meeting as BackendMeeting)._id, (meeting as BackendMeeting).analysis))
+  const actionItems = ((meeting as BackendMeeting).analysis?.action_items || []).map((a, i) => mapActionItem(a, i, (meeting as BackendMeeting)._id, mapped.title))
+  const uniqueSpeakers = Array.from(new Set(segments.map(s => s.speaker).filter(Boolean)))
+
+  const handleDownload = async (format: "csv" | "pdf") => {
+    if (!meeting) return
+    setDownloading(true)
+    try { await downloadReport(meeting, format) } catch { /* ignore */ }
+    setDownloading(false)
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Breadcrumb */}
+      <div className="flex items-center gap-2 text-sm">
+        <Link href="/app" className="text-muted-foreground hover:text-foreground flex items-center gap-1">
+          <ChevronLeft className="h-4 w-4" /> Dashboard
+        </Link>
+        <span className="text-muted-foreground">/</span>
+        <span className="text-foreground font-medium">{mapped.title}</span>
+      </div>
+
+      {/* Header */}
+      <div className="flex items-start justify-between">
+        <div>
+          <h1 className="font-serif text-3xl font-semibold text-foreground">{mapped.title}</h1>
+          <div className="mt-2 flex items-center gap-4 text-sm text-muted-foreground">
+            <span className="flex items-center gap-1"><Clock className="h-4 w-4" />{mapped.date}</span>
+            <span className="flex items-center gap-1"><Users className="h-4 w-4" />{mapped.speakers} speakers</span>
+            <span className="flex items-center gap-1"><MessageSquare className="h-4 w-4" />{mapped.words.toLocaleString()} words</span>
+          </div>
+        </div>
+        <div className="flex gap-2">
+          <Button variant="outline" className="gap-2" onClick={() => handleDownload("csv")} disabled={downloading}>
+            {downloading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />} CSV
+          </Button>
+          <Button variant="outline" className="gap-2" onClick={() => handleDownload("pdf")} disabled={downloading}>
+            {downloading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />} PDF
+          </Button>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+        {/* Transcript segments */}
+        <div className="space-y-4 lg:col-span-2">
+          <h2 className="font-serif text-lg font-semibold text-foreground">Transcript Segments</h2>
+          {segments.length === 0 ? (
+            <Card><CardContent className="py-8 text-center text-muted-foreground">No segments available for this meeting.</CardContent></Card>
+          ) : (
+            segments.map((seg) => (
+              <div
+                key={seg.segment_id}
+                ref={el => { if (el) segmentRefs.current[seg.segment_id] = el }}
+                className={`flex gap-4 rounded-lg p-3 transition-all duration-500 ${activeSegmentId === seg.segment_id ? "bg-primary/10 ring-2 ring-primary/40" : "hover:bg-muted/30"}`}
+              >
+                <Avatar className="h-10 w-10 flex-shrink-0">
+                  <img src={avatarFor(seg.speaker)} alt={seg.speaker} className="rounded-full object-cover" />
+                  <AvatarFallback>{seg.speaker?.[0] || "?"}</AvatarFallback>
+                </Avatar>
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="font-medium text-foreground">{seg.speaker}</span>
+                    {seg.role && seg.role !== "Unknown" && <span className="text-xs text-muted-foreground">({seg.role})</span>}
+                    {seg.emotion && (
+                      <Badge className={`text-[10px] ${emotionBadgeStyle(seg.emotion)}`}>{seg.emotion}</Badge>
+                    )}
+                  </div>
+                  <p className="mt-1 text-sm text-muted-foreground leading-relaxed whitespace-pre-line">{seg.text}</p>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+
+        {/* Sidebar */}
+        <div className="space-y-4">
+          {/* Decisions */}
+          {decisions.length > 0 && (
+            <Card>
+              <CardHeader className="pb-3"><CardTitle className="text-base">Decisions ({decisions.length})</CardTitle></CardHeader>
+              <CardContent className="space-y-3">
+                {decisions.map((d) => (
+                  <div key={d.id} className="group">
+                    <div className="flex items-start gap-2">
+                      <CheckCircle2 className="mt-0.5 h-4 w-4 flex-shrink-0 text-primary" />
+                      <p className="text-sm text-foreground leading-snug">{d.title}</p>
+                    </div>
+                    {d.evidence.length > 0 && (
+                      <button
+                        className="ml-6 mt-1 text-xs text-primary hover:underline"
+                        onClick={() => scrollToSegment(d.evidence[0].segment_id)}
+                      >
+                        → View in transcript
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Action items */}
+          {actionItems.length > 0 && (
+            <Card>
+              <CardHeader className="pb-3"><CardTitle className="text-base">Action Items ({actionItems.length})</CardTitle></CardHeader>
+              <CardContent className="space-y-3">
+                {actionItems.map(item => (
+                  <button
+                    key={item.id}
+                    className="flex items-start gap-2 w-full text-left hover:bg-muted/30 p-1.5 -mx-1.5 rounded-md transition-colors"
+                    onClick={() => taskMutation.mutate({ taskId: item.id, status: item.completed ? "pending" : "completed" })}
+                    disabled={taskMutation.isPending && taskMutation.variables?.taskId === item.id}
+                  >
+                    {taskMutation.isPending && taskMutation.variables?.taskId === item.id ? (
+                      <Loader2 className="mt-0.5 h-4 w-4 flex-shrink-0 text-muted-foreground animate-spin" />
+                    ) : (
+                      <CheckCircle2 className={`mt-0.5 h-4 w-4 flex-shrink-0 ${item.completed ? "text-green-600" : "text-muted-foreground"}`} />
+                    )}
+                    <div>
+                      <p className={`text-sm ${item.completed ? "line-through text-muted-foreground" : "text-foreground"}`}>{item.title}</p>
+                      <p className="text-xs text-primary">{item.assignee.name} • {item.dueDate}</p>
+                    </div>
+                  </button>
+                ))}
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Speakers */}
+          {uniqueSpeakers.length > 0 && (
+            <Card>
+              <CardHeader className="pb-3"><CardTitle className="text-base">Speakers</CardTitle></CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  {uniqueSpeakers.map(name => (
+                    <div key={name} className="flex items-center gap-2">
+                      <Avatar className="h-7 w-7">
+                        <img src={avatarFor(name)} alt={name} className="rounded-full object-cover" />
+                        <AvatarFallback>{name[0]}</AvatarFallback>
+                      </Avatar>
+                      <span className="text-sm text-foreground">{name}</span>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+        </div>
+      </div>
+    </div>
+  )
+}
+
+export default function TranscriptsPage() {
+  return (
+    <Suspense fallback={<div className="p-12 text-center text-muted-foreground flex items-center justify-center gap-2"><Loader2 className="h-4 w-4 animate-spin" />Loading transcript...</div>}>
+      <TranscriptsContent />
+    </Suspense>
+  )
+}
