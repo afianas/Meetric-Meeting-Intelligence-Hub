@@ -2,8 +2,7 @@
 > An AI-powered meeting intelligence platform that converts raw transcripts into decisions, tasks, and searchable insights using a custom RAG pipeline.
 
 ## 🎥 Demo Video
-[![Meeting Intelligence Hub Demo](https://img.shields.io/badge/Demo-Watch%20Video-red?style=for-the-badge&logo=youtube)]([https://drive.google.com/file/d/1WTlDdmaEEmM7Zww5M5edbI-dc1ZTqQeX/view?usp=sharing](https://drive.google.com/file/d/1HaxOBSXsASlW4IjiKtKmesqKk9N0GNvs/view?usp=drive_link))
-
+[![Meeting Intelligence Hub Demo](https://img.shields.io/badge/Demo-Watch%20Video-red?style=for-the-badge&logo=youtube)](https://drive.google.com/file/d/1HaxOBSXsASlW4IjiKtKmesqKk9N0GNvs/view?usp=drivesdk)
 ---
 
 ## 1. Project Overview
@@ -233,9 +232,5 @@ frontend/
    - *"Why did we decide to delay the project launch?"*
    - *"What were the three main concerns raised by the Finance Lead?"*
    - *"Who is responsible for the API documentation?"*
-<<<<<<< HEAD
 8. **History Management:** Navigate to **Meeting History**. Toggle "Group by Name" to see how recurring weekly syncs are consolidated into a single thematic folder.
-9. **Source Attribution:** Notice how the AI answers provide **clickable citations** that link back to the exact meeting and timestamped segment.
-=======
-8. **Source Attribution:** Notice how the AI answers provide **clickable citations** that link back to the exact meeting and segment.
->>>>>>> 41f95016d48d076f83a49e89f7071b6cbee73b5b
+9. **Source Attribution:** Notice how the AI answers provide **clickable citations** that link back to the exact meeting and segment.
