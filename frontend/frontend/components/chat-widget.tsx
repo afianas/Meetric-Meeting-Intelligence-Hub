@@ -72,13 +72,29 @@ export function ChatWidget() {
     }
   })
 
+  // Listen for external query events
+  useEffect(() => {
+    const handleExternalQuery = (e: Event) => {
+      const customEvent = e as CustomEvent;
+      const q = customEvent.detail?.query;
+      if (q) {
+        setIsOpen(true);
+        setQuery("");
+        setIsThinking(true);
+        setMessages(prev => [...prev, { role: "user", text: q }]);
+        chatMutation.mutate(q);
+      }
+    };
+    window.addEventListener('meetric-chat-query', handleExternalQuery);
+    return () => window.removeEventListener('meetric-chat-query', handleExternalQuery);
+  }, [chatMutation]);
+
   const handleSubmit = () => {
     if (!query.trim() || isThinking || chatMutation.isPending) return
     const q = query
     setQuery("")
     setIsThinking(true)
     setMessages(prev => [...prev, { role: "user", text: q }])
-    // If it's closed and the user somehow hits submit...? It shouldn't happen.
     chatMutation.mutate(q)
   }
 

@@ -90,9 +90,7 @@ export default function ActionTrackerPage() {
         <p className="mt-2 max-w-xl text-muted-foreground">Track action items extracted from your meeting transcripts. Toggle completion to sync with the backend.</p>
       </div>
 
-      <div className="flex justify-end gap-2">
-        <Button variant="outline" className="gap-2" onClick={() => load()}><RefreshCw className="h-4 w-4" />Refresh</Button>
-      </div>
+      <div />
 
       {/* Sprint Progress */}
       <Card>

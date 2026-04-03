@@ -78,15 +78,7 @@ export default function DecisionTrackerPage() {
             </Select>
           </div>
         </div>
-        <div className="flex gap-2">
-          <Button variant="outline" className="gap-2 text-primary" onClick={() => load()}><RefreshCw className="h-4 w-4" />Refresh</Button>
-          <Button variant="outline" className="gap-2 text-primary" onClick={() => handleExport("csv")} disabled={downloading || filtered.length === 0}>
-            {downloading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />} Export CSV
-          </Button>
-          <Button variant="outline" className="gap-2 text-primary" onClick={() => handleExport("pdf")} disabled={downloading || filtered.length === 0}>
-            {downloading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />} Export PDF
-          </Button>
-        </div>
+        <div />
       </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">

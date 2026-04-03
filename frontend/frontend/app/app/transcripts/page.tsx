@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Input } from "@/components/ui/input"
-import { ChevronLeft, Download, Clock, Users, MessageSquare, CheckCircle2, Loader2, AlertCircle, FileText, Sparkles } from "lucide-react"
+import { ChevronLeft, Download, Clock, Users, MessageSquare, CheckCircle2, Loader2, AlertCircle, FileText, Sparkles, ArrowRight } from "lucide-react"
 import Link from "next/link"
 import { getMeeting, getMeetings, downloadReport, normalizeMeeting, normalizeDecision, normalizeActionItem, BackendMeeting, BackendSegment, updateTaskStatus, getInitials } from "@/lib/api"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
@@ -118,7 +118,7 @@ function TranscriptsContent() {
     <div className="flex flex-col items-center justify-center py-16 px-4 w-full">
       {/* ... (keep existing select transcript view) */}
       <div className="text-center max-w-lg mb-8">
-        <h1 className="font-serif text-3xl font-semibold text-foreground">Select a Transcript</h1>
+        <h1 className="font-serif text-3xl text-foreground">Select a Transcript</h1>
         <p className="mt-2 text-muted-foreground">Choose a meeting from the list below to view its full transcript and extract insights.</p>
       </div>
 
@@ -214,28 +214,21 @@ function TranscriptsContent() {
       {/* Header */}
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="font-serif text-3xl font-semibold text-foreground">{mapped.title}</h1>
+          <h1 className="font-serif text-3xl text-foreground">{mapped.title}</h1>
           <div className="mt-2 flex items-center gap-4 text-sm text-muted-foreground">
             <span className="flex items-center gap-1"><Clock className="h-4 w-4" />{mapped.date}</span>
             <span className="flex items-center gap-1"><Users className="h-4 w-4" />{mapped.speakers} speakers</span>
             <span className="flex items-center gap-1"><MessageSquare className="h-4 w-4" />{mapped.words.toLocaleString()} words</span>
           </div>
         </div>
-        <div className="flex gap-2">
-          <Button variant="outline" className="gap-2" onClick={() => handleDownload("csv")} disabled={downloading}>
-            {downloading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />} CSV
-          </Button>
-          <Button variant="outline" className="gap-2" onClick={() => handleDownload("pdf")} disabled={downloading}>
-            {downloading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />} PDF
-          </Button>
-        </div>
+      <div />
       </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         {/* Transcript segments */}
         <div className="space-y-4 lg:col-span-2">
           <div className="flex items-center justify-between">
-            <h2 className="font-serif text-lg font-semibold text-foreground">Transcript Segments</h2>
+            <h2 className="font-serif text-lg text-foreground">Transcript Segments</h2>
             {highlightedContextIds.length > 0 && (
               <Badge variant="outline" className="animate-in fade-in slide-in-from-right-4 duration-500 bg-primary/5 text-primary border-primary/20">
                 Context around this discussion
@@ -336,6 +329,56 @@ function TranscriptsContent() {
               </CardContent>
             </Card>
           )}
+
+          {/* AI Assistant Card - Scoped for this meeting */}
+          <Card className="border-primary/10 bg-primary/5 backdrop-blur-sm shadow-none">
+            <CardHeader className="pb-3 flex flex-row items-center gap-2">
+              <div className="h-7 w-7 rounded-lg bg-primary/20 flex items-center justify-center">
+                <Sparkles className="h-4 w-4 text-primary" />
+              </div>
+              <CardTitle className="text-base">AI Assistant</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <p className="text-[11px] text-muted-foreground leading-relaxed">
+                Ask Meetric AI for unique insights or specific extractions from this dialogue.
+              </p>
+              
+              <div className="grid grid-cols-1 gap-2">
+                {[
+                  { label: "Summarize Session", query: "Can you provide a high-level summary of this meeting and its main outcomes?" },
+                  { label: "Identify Key Risks", query: "What are the primary risks or unresolved concerns mentioned in this transcript?" },
+                  { label: "Synthesize Next Steps", query: "Based on this discussion, what are the immediate concrete next steps for each stakeholder?" }
+                ].map((action, i) => (
+                  <Button 
+                    key={i}
+                    variant="outline" 
+                    size="sm" 
+                    className="justify-start h-8 text-[10px] font-bold uppercase tracking-widest bg-background/50 hover:bg-primary/10 hover:text-primary transition-all border-border/40"
+                    onClick={() => {
+                      window.dispatchEvent(new CustomEvent('meetric-chat-query', { 
+                        detail: { query: action.query } 
+                      }));
+                    }}
+                  >
+                    <ArrowRight className="mr-2 h-3 w-3 opacity-50" /> {action.label}
+                  </Button>
+                ))}
+              </div>
+
+              <div className="pt-2">
+                <Button 
+                  className="w-full h-9 text-[10px] uppercase font-black tracking-widest gap-2 shadow-lg shadow-primary/10"
+                  onClick={() => {
+                    window.dispatchEvent(new CustomEvent('meetric-chat-query', { 
+                      detail: { query: "I have a specific question about this meeting..." } 
+                    }));
+                  }}
+                >
+                  <MessageSquare className="h-3.5 w-3.5" /> Launch Full Assistant
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
 
           {/* Speakers */}
           {uniqueSpeakers.length > 0 && (
