@@ -18,6 +18,7 @@ The system is partitioned into three functional layers to ensure separation of c
 - **Explainability Layer:** A custom mapping engine that correlates LLM outputs with source segments for auditability.
 - **Source Traceability Layer:** A navigation architecture that enables segment-level deep linking from AI responses back to transcript dialogue. It incorporates smooth-scroll positioning, context-aware highlighting (±2 segments), and visual feedback (pulse animations) to ground AI reasoning in verifiable conversation moments.
 - **Data Organization Layer:** A mutation-driven UI framework utilizing TanStack Query, enabling dynamic client-side sorting and grouping strategies with real-time synchronization during meeting modifications/deletions.
+- **Speaker Intelligence Layer:** A visualization architecture for psychological and behavioral profiling. It transforms raw sentiment logs into interactive Radar (Emotional Footprint) and Area (Sentiment Flow) charts, connected to a real-time Dialogue Inspector for granular verification.
 
 ## 4. Action Tracking Logic
 The system implements a high-fidelity task management strategy to ensure operational accuracy:
@@ -78,5 +79,14 @@ To address the common RAG challenge of "Single-Meeting Dominance," we implement 
 - **Diversity Sampling Logic**: In global mode, segments are grouped by `meeting_id`. The system ensures at least one top segment from every uniquely found meeting is included in the LLM context, preventing any one meeting from crowding out the summary.
 - **Synthesized Prompting**: When multiple meetings are retrieved, the LLM is conditioned with a specialized comparative prompt to identify cross-meeting patterns.
 
-## 10. Why This Design is Effective
+## 11. Interactive Speaker Intelligence Layer
+The system provides a professional-grade behavioral analytics dashboard designed to bridge the gap between aggregate sentiment and raw conversation.
+
+- **Psychological Profiling (Radar)**: We implement a per-speaker "Emotional Footprint" using Radar charts. This compares the distribution of Agreement, Conflict, Concern, and Uncertainty across the top three participants, identifying behavioral patterns (e.g., the "Challenger" vs. the "Collaborator").
+- **Chronological Flow Dynamics (Area)**: Instead of static percentages, the system maps the "Emotional Temperature" of the meeting over time. Each segment is assigned a numeric value based on its emotion (Agreement: +10, Conflict: -10, Concern: -5, Uncertainty: +5, Neutral: 0) to plot a continuous sentiment Area chart.
+- **Dialogue Inspector (Granular Verification)**: The dashboard features a real-time inspector card. Clicking any node on the sentiment flow timeline triggers a state update that reveals the segment's exact text, speaker role, and AI confidence score.
+- **Natural Language Insight Generation**: To provide "glanceable" value, the backend includes a rule-based insight engine. It analyzes the final distribution of emotions to produce a 1-line narrative summary (e.g., *"Mostly collaborative with brief technical conflict"*), providing human-readable context to the raw data.
+- **Deep-Segment Linking**: Every data point in the intelligence layer preserves its `meeting_id` and `segment_id`, enabling one-click navigation from a behavioral trend directly to the full transcript dialogue.
+
+## 12. Why This Design is Effective
 This architecture balances architectural simplicity with high-performance intelligence. By integrating retrieval, reasoning, and execution layers, the system provides more than just a summary—it provides a verifiable, traceable record of organizational momentum. The focus on explainability ensures that every AI-generated insight is grounded in reality, fostering trust and accountability in the decision-making process.

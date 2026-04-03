@@ -238,10 +238,28 @@ export async function chat(query: string, meetingId?: string): Promise<ChatRespo
   return apiFetch<ChatResponse>(`/chat?${params.toString()}`);
 }
 
-export async function getSpeakerAnalytics(): Promise<{
+export async function getSpeakerAnalytics(meetingId?: string): Promise<{
   speakers: { speaker: string; total_segments: number; emotion_distribution: Record<string, number> }[];
 }> {
-  return apiFetch("/speaker-analytics");
+  const params = new URLSearchParams();
+  if (meetingId) params.set("meeting_id", meetingId);
+  return apiFetch(`/speaker-analytics?${params.toString()}`);
+}
+
+export async function getSentimentFlow(meetingId?: string): Promise<{
+  flow: { segment_id: string; speaker: string; emotion: string; text: string; confidence: number; meeting_id: string }[];
+}> {
+  const params = new URLSearchParams();
+  if (meetingId) params.set("meeting_id", meetingId);
+  return apiFetch(`/sentiment-flow?${params.toString()}`);
+}
+
+export async function getSentimentInsight(meetingId?: string): Promise<{
+  insight: string;
+}> {
+  const params = new URLSearchParams();
+  if (meetingId) params.set("meeting_id", meetingId);
+  return apiFetch(`/sentiment-insight?${params.toString()}`);
 }
 
 export async function updateTask(meetingId: string, taskId: number, status: string): Promise<void> {
