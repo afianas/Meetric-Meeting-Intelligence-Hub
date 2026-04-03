@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { useRouter } from "next/navigation"
-import { getMeetings, mapMeeting, BackendMeeting, MappedMeeting, deleteMeeting, deleteAllMeetings } from "@/lib/api"
+import { getMeetings, normalizeMeeting, BackendMeeting, MappedMeeting, deleteMeeting, deleteAllMeetings } from "@/lib/api"
 import { BarChart3, Lightbulb, MessageSquare, ListTodo, Filter, ArrowUpDown, Eye, Trash2, Share2, ChevronRight, TrendingUp, Loader2, AlertCircle } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -49,6 +49,23 @@ export default function DashboardPage() {
   const queryClient = useQueryClient()
   const [groupBy, setGroupBy] = useState<'none' | 'date' | 'name'>('none')
 
+  const EMOTION_COLORS: Record<string, string> = {
+    agreement: "#15803d",
+    conflict: "#b91c1c",
+    concern: "#d97706",
+    uncertainty: "#7c3aed",
+    neutral: "#64748b"
+  }
+
+  const getEmotionStyle = (emotion: string) => {
+    const e = (emotion || "neutral").toLowerCase();
+    const color = EMOTION_COLORS[e] || EMOTION_COLORS.neutral;
+    return {
+      backgroundColor: `${color}15`,
+      color: color,
+    }
+  }
+
   const { data: meetings = [], isLoading: loading, error, refetch: load } = useQuery({
     queryKey: ['meetings'],
     queryFn: getMeetings,
@@ -77,7 +94,7 @@ export default function DashboardPage() {
     }
   })
 
-  const mapped: MappedMeeting[] = meetings.map(mapMeeting)
+  const mapped: MappedMeeting[] = meetings.map(normalizeMeeting)
   const totalDecisions = mapped.reduce((s, m) => s + m.totalDecisions, 0)
   const totalPendingActions = mapped.reduce((s, m) => s + m.pendingActionItems, 0)
   const totalActionItems = mapped.reduce((s, m) => s + m.totalActionItems, 0)
@@ -144,7 +161,10 @@ export default function DashboardPage() {
                   <div>
                     <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">{stat.sublabel}</p>
                     <p className="mt-1 text-sm text-muted-foreground">{stat.label}</p>
-                    <p className="mt-2 font-serif text-3xl font-semibold text-foreground">{stat.value}</p>
+                    <p className={`mt-2 font-sans font-black uppercase tracking-widest text-3xl`} 
+                      style={stat.label === "Dominant Tone" ? { color: EMOTION_COLORS[stat.value.toLowerCase()] || EMOTION_COLORS.neutral } : {}}>
+                      {stat.value}
+                    </p>
                     <p className={`mt-1 text-xs ${stat.changeColor || "text-green-600"}`}>{stat.change}</p>
                   </div>
                   <div className="rounded-lg bg-primary/10 p-2"><stat.icon className="h-5 w-5 text-primary" /></div>
@@ -272,7 +292,12 @@ export default function DashboardPage() {
                             <p className="text-lg font-semibold text-foreground">{meeting.words.toLocaleString()}</p>
                             <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Words</p>
                           </div>
-                          <Badge className={`hidden md:inline-flex ${meeting.tagColor}`}>{meeting.tag}</Badge>
+                          <Badge 
+                            className="hidden md:inline-flex border-none font-sans font-bold uppercase tracking-widest text-[10px]"
+                            style={getEmotionStyle(meeting.dominantEmotion)}
+                          >
+                            {meeting.dominantEmotion}
+                          </Badge>
                           <div className="flex items-center gap-1">
                             <Button variant="ghost" size="icon" className="h-8 w-8 hover:text-primary" onClick={e => { e.stopPropagation(); router.push(`/app/transcripts?id=${meeting.id}`) }}><Eye className="h-4 w-4" /></Button>
                             

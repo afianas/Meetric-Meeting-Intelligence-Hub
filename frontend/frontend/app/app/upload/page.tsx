@@ -8,7 +8,7 @@ import { Progress } from "@/components/ui/progress"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Upload, FileText, CheckCircle2, AlertCircle, Sparkles, Loader2, Trash2 } from "lucide-react"
-import { uploadTranscript, getMeetings, deleteMeeting, BackendMeeting, mapMeeting } from "@/lib/api"
+import { uploadTranscript, getMeetings, deleteMeeting, BackendMeeting, normalizeMeeting } from "@/lib/api"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 
 type UploadState = "idle" | "uploading" | "processing" | "completed" | "error"
@@ -25,6 +25,22 @@ export default function UploadPage() {
   const [result, setResult] = useState<BackendMeeting | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [meetingName, setMeetingName] = useState("")
+
+  const emotionBadgeStyle = (emotion: string) => {
+    const EMOTION_COLORS: Record<string, string> = {
+      agreement: "#15803d",
+      conflict: "#b91c1c",
+      concern: "#d97706",
+      uncertainty: "#7c3aed",
+      neutral: "#64748b"
+    }
+    const e = (emotion || "neutral").toLowerCase();
+    const color = EMOTION_COLORS[e] || EMOTION_COLORS.neutral;
+    return {
+      backgroundColor: `${color}15`,
+      color: color,
+    }
+  }
 
   const { data: meetings = [], isLoading: loadingMeetings } = useQuery({
     queryKey: ['meetings'],
@@ -222,7 +238,7 @@ export default function UploadPage() {
         ) : (
           <div className="space-y-3">
             {(meetings as BackendMeeting[]).map((m: BackendMeeting) => {
-              const mapped = mapMeeting(m)
+              const mapped = normalizeMeeting(m)
               return (
                  <Card key={m._id} className="transition-shadow hover:shadow-md">
                    <CardContent className="flex items-center justify-between p-4">
@@ -234,7 +250,12 @@ export default function UploadPage() {
                        </div>
                      </div>
                      <div className="flex items-center gap-3">
-                       <Badge className={mapped.tagColor}>{mapped.tag}</Badge>
+                       <Badge 
+                         className="hidden md:inline-flex border-none font-sans font-bold uppercase tracking-widest text-[10px]"
+                         style={emotionBadgeStyle(mapped.dominantEmotion)}
+                       >
+                         {mapped.dominantEmotion}
+                       </Badge>
                        <Button
                          variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-red-600"
                          onClick={() => handleDelete(m._id)} disabled={deleteMutation.isPending && deleteMutation.variables === m._id}

@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from "react"
 import { usePathname, useSearchParams } from "next/navigation"
-import { MessageSquare, X, Send, Sparkles, Loader2, Maximize2, Minimize2, ChevronDown, ChevronUp } from "lucide-react"
+import { MessageSquare, X, Send, Sparkles, Loader2, Maximize2, Minimize2, ChevronDown, ChevronUp, AlertCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -19,10 +19,10 @@ interface ChatMsg {
 
 const getConfidenceLabel = (conf: number) => {
   const p = conf * 100;
-  if (p >= 85) return "High confidence";
-  if (p >= 60) return "Good match";
-  if (p >= 30) return "Partial relevance";
-  return "Weak / uncertain";
+  if (p >= 85) return "Exceptional Match";
+  if (p >= 70) return "High Relevance";
+  if (p >= 45) return "Good Match";
+  return "Partial / Uncertain";
 };
 
 export function ChatWidget() {
@@ -62,11 +62,7 @@ export function ChatWidget() {
   const chatMutation = useMutation({
     mutationFn: (q: string) => chat(q, meetingId || undefined),
     onSuccess: (res) => {
-      let finalAnswer = res.answer;
-      if (res.confidence < 0.1 || !res.answer || res.answer.trim() === "") {
-        finalAnswer = "No relevant information found in the knowledge base.";
-      }
-      setMessages(prev => [...prev, { role: "ai", text: finalAnswer, response: res }])
+      setMessages(prev => [...prev, { role: "ai", text: res.answer, response: res }])
     },
     onError: () => {
       setMessages(prev => [...prev, { role: "ai", text: "Could not reach the backend. Please try again." }])
@@ -130,12 +126,12 @@ export function ChatWidget() {
           {messages.map((msg, i) => (
             <div key={i} className="flex flex-col space-y-2">
               <div className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
-                <div className={`rounded-xl px-4 py-2 text-sm max-w-[85%] whitespace-pre-line shadow-sm
+                <div className={`rounded-xl px-4 py-2 text-sm max-w-[88%] whitespace-pre-line shadow-sm border border-border/50 backdrop-blur-md font-serif animate-in fade-in slide-in-from-bottom-2 duration-300
                   ${msg.role === "user" 
-                    ? "bg-primary text-primary-foreground rounded-br-sm" 
-                    : "bg-background border border-border rounded-bl-sm text-foreground"}`
+                    ? "bg-primary text-primary-foreground rounded-br-sm shadow-md font-sans" 
+                    : (msg.response && (msg.response.confidence ?? 0) < 0.25 ? "bg-amber-50/20 border-amber-200/30 rounded-bl-sm" : "bg-muted/40 rounded-bl-sm text-foreground shadow-inner")}`
                 }>
-                  {msg.text}
+                  {msg.text || "Thinking..."}
                 </div>
               </div>
               
@@ -177,9 +173,9 @@ export function ChatWidget() {
                                   </div>
                                   <span className="text-[9px] font-bold text-foreground group-hover:text-primary transition-colors">{src.speaker || "Unknown"}</span>
                                 </div>
-                                {src.emotion && (
-                                  <Badge variant="outline" className="text-[7px] h-3.5 px-1 bg-primary/5 text-primary border-primary/20 capitalize font-medium">
-                                    {src.emotion}
+                                {(msg.response?.confidence ?? 0) < 0.25 && (
+                                  <Badge variant="outline" className="text-[9px] h-4 px-1.5 bg-amber-50/50 text-amber-700 border-none font-bold animate-pulse">
+                                    <AlertCircle className="h-2.5 w-2.5 mr-1" /> Semantic Inference
                                   </Badge>
                                 )}
                               </div>

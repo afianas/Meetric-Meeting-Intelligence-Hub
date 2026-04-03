@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useMemo } from "react"
-import { getMeetings, downloadReport, BackendMeeting, MappedDecision, mapDecision } from "@/lib/api"
+import { getMeetings, downloadReport, BackendMeeting, MappedDecision, normalizeDecision } from "@/lib/api"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -16,7 +16,7 @@ export default function DecisionTrackerPage() {
 
   const decisions = useMemo(() => {
     return (meetings as BackendMeeting[]).flatMap(m => 
-      (m.analysis?.decisions || []).map((d, idx) => mapDecision(d, idx, m._id, m.analysis))
+      (m.analysis?.decisions || []).map((d, idx) => normalizeDecision(d, idx, m._id, m.analysis))
     )
   }, [meetings])
 

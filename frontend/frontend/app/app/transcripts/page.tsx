@@ -7,9 +7,9 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Input } from "@/components/ui/input"
-import { ChevronLeft, Download, Clock, Users, MessageSquare, CheckCircle2, Loader2, AlertCircle, FileText } from "lucide-react"
+import { ChevronLeft, Download, Clock, Users, MessageSquare, CheckCircle2, Loader2, AlertCircle, FileText, Sparkles } from "lucide-react"
 import Link from "next/link"
-import { getMeeting, getMeetings, downloadReport, mapMeeting, mapDecision, mapActionItem, BackendMeeting, BackendSegment, updateTask } from "@/lib/api"
+import { getMeeting, getMeetings, downloadReport, normalizeMeeting, normalizeDecision, normalizeActionItem, BackendMeeting, BackendSegment, updateTaskStatus } from "@/lib/api"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 
 const AVATAR_POOL = [
@@ -22,12 +22,20 @@ function avatarFor(name: string) {
   let h = 0; for (let i = 0; i < name.length; i++) h = (h + name.charCodeAt(i)) % AVATAR_POOL.length; return AVATAR_POOL[h]
 }
 
-function emotionBadgeStyle(emotion: string): string {
-  const e = (emotion || "").toLowerCase()
-  if (["agreement", "joy"].includes(e)) return "bg-green-100 text-green-700"
-  if (["conflict", "anger"].includes(e)) return "bg-red-100 text-red-700"
-  if (["concern", "fear"].includes(e)) return "bg-yellow-100 text-yellow-700"
-  return "bg-gray-100 text-gray-600"
+function emotionBadgeStyle(emotion: string) {
+  const EMOTION_COLORS: Record<string, string> = {
+    agreement: "#15803d",
+    conflict: "#b91c1c",
+    concern: "#d97706",
+    uncertainty: "#7c3aed",
+    neutral: "#64748b"
+  }
+  const e = (emotion || "neutral").toLowerCase()
+  const color = EMOTION_COLORS[e] || EMOTION_COLORS.neutral
+  return {
+    backgroundColor: `${color}15`,
+    color: color,
+  }
 }
 
 
@@ -52,7 +60,7 @@ function TranscriptsContent() {
   })
 
   const taskMutation = useMutation({
-    mutationFn: ({ taskId, status }: { taskId: number, status: string }) => updateTask(meetingId!, taskId, status),
+    mutationFn: ({ taskId, status }: { taskId: number, status: string }) => updateTaskStatus(meetingId!, taskId, status),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['meeting', meetingId] })
   })
 
@@ -131,7 +139,7 @@ function TranscriptsContent() {
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 w-full max-w-5xl">
           {(allMeetings as BackendMeeting[]).map(m => {
-            const mapped = mapMeeting(m);
+            const mapped = normalizeMeeting(m);
             return (
               <Link href={`/app/transcripts?id=${m._id}`} key={m._id}>
                 <Card className="hover:border-primary/50 cursor-pointer transition-all hover:shadow-md h-full">
@@ -174,10 +182,10 @@ function TranscriptsContent() {
     </div>
   )
 
-  const mapped = mapMeeting(meeting as BackendMeeting)
+  const mapped = normalizeMeeting(meeting as BackendMeeting)
   const segments: BackendSegment[] = (meeting as BackendMeeting).segments || []
-  const decisions = ((meeting as BackendMeeting).analysis?.decisions || []).map((d, i) => mapDecision(d, i, (meeting as BackendMeeting)._id, (meeting as BackendMeeting).analysis))
-  const actionItems = ((meeting as BackendMeeting).analysis?.action_items || []).map((a, i) => mapActionItem(a, i, (meeting as BackendMeeting)._id, mapped.title))
+  const decisions = ((meeting as BackendMeeting).analysis?.decisions || []).map((d, i) => normalizeDecision(d, i, (meeting as BackendMeeting)._id, (meeting as BackendMeeting).analysis))
+  const actionItems = ((meeting as BackendMeeting).analysis?.action_items || []).map((a, i) => normalizeActionItem(a, i, (meeting as BackendMeeting)._id, mapped.title))
   const uniqueSpeakers = Array.from(new Set(segments.map(s => s.speaker).filter(Boolean)))
 
   const handleDownload = async (format: "csv" | "pdf") => {
@@ -266,7 +274,12 @@ function TranscriptsContent() {
                       <span className="font-medium text-foreground">{seg.speaker || "Unknown"}</span>
                       {seg.role && seg.role !== "Unknown" && <span className="text-xs text-muted-foreground">({seg.role})</span>}
                       {seg.emotion && (
-                        <Badge className={`text-[10px] ${emotionBadgeStyle(seg.emotion)}`}>{seg.emotion}</Badge>
+                        <Badge 
+                          className="text-[10px] border-none font-sans font-bold uppercase tracking-widest"
+                          style={emotionBadgeStyle(seg.emotion)}
+                        >
+                          {seg.emotion}
+                        </Badge>
                       )}
                     </div>
                     <p className="mt-1 text-sm text-muted-foreground leading-relaxed whitespace-pre-line">{seg.text}</p>

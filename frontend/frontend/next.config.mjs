@@ -7,9 +7,7 @@ const nextConfig = {
     unoptimized: true,
   },
   experimental: {
-    turbopack: {
-      root: '.',
-    },
+    // turbopack is integrated directly or uses different config in Next 15+
   },
 }
 

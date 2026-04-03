@@ -6,7 +6,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useRouter } from "next/navigation"
 import { useQuery } from "@tanstack/react-query"
-import { getMeetings, BackendMeeting, mapMeeting } from "@/lib/api"
+import { getMeetings, BackendMeeting, normalizeMeeting } from "@/lib/api"
 
 export function AppHeader() {
   const router = useRouter()
@@ -31,7 +31,7 @@ export function AppHeader() {
           </SelectTrigger>
           <SelectContent>
             {(meetings as BackendMeeting[]).map(m => {
-              const mapped = mapMeeting(m);
+              const mapped = normalizeMeeting(m);
               return (
                 <SelectItem key={m._id} value={m._id}>
                   {mapped.title} ({mapped.date})

@@ -1,6 +1,10 @@
 from app.services.vector_service import add_vector, reset_vectors
 from bson import ObjectId
 
+def get_all_meeting_titles_and_ids():
+    meetings = list(collection.find({}, {"analysis.title": 1, "_id": 1}))
+    return [{"id": str(m["_id"]), "title": m.get("analysis", {}).get("title", "Unnamed Meeting")} for m in meetings]
+
 def get_all_meetings():
     meetings = list(collection.find())
 
@@ -35,8 +39,13 @@ def add_meeting(data):
     if collection is None:
         raise Exception("MongoDB not connected")
 
+    analysis = data.get("analysis", {})
+    # Fallback to ensure we always have a meeting name
+    if not analysis.get("meeting_name"):
+        analysis["meeting_name"] = "Untitled Meeting"
+
     new_meeting = {
-        "analysis": data.get("analysis", {}),
+        "analysis": analysis,
         "segments": data.get("segments", [])
     }
 
@@ -61,6 +70,9 @@ def delete_meeting(meeting_id: str):
         raise Exception("MongoDB not connected")
     try:
         result = collection.delete_one({"_id": ObjectId(meeting_id)})
+        if result.deleted_count > 0:
+            from app.services.vector_service import remove_meeting_vectors
+            remove_meeting_vectors(meeting_id)
         return result.deleted_count > 0
     except Exception:
         return False

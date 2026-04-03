@@ -5,10 +5,13 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
-import { FileText, MessageSquare, Send, Sparkles, Lightbulb } from "lucide-react"
+import { FileText, MessageSquare, Send, Sparkles, Lightbulb, AlertCircle, Copy } from "lucide-react"
 import Link from "next/link"
 import { chat, ChatResponse } from "@/lib/api"
 import { useMutation } from "@tanstack/react-query"
+import ReactMarkdown from "react-markdown"
+import remarkGfm from "remark-gfm"
+import { toast } from "sonner"
 
 const groupSourcesByMeeting = (sources: any[]) => {
   return sources.reduce((acc: Record<string, { title: string, items: any[] }>, src) => {
@@ -26,10 +29,10 @@ const groupSourcesByMeeting = (sources: any[]) => {
 
 const getConfidenceLabel = (conf: number) => {
   const p = conf * 100;
-  if (p >= 85) return "High confidence";
-  if (p >= 60) return "Good match";
-  if (p >= 30) return "Partial relevance";
-  return "Weak / uncertain";
+  if (p >= 85) return "Exceptional Match";
+  if (p >= 70) return "High Relevance";
+  if (p >= 45) return "Good Match";
+  return "Partial / Uncertain";
 };
 
 const suggestedQueries = [
@@ -67,12 +70,8 @@ export default function QueryEnginePage() {
 
   const chatMutation = useMutation({
     mutationFn: (q: string) => chat(q),
-    onSuccess: (response) => {
-      let finalAnswer = response.answer;
-      if (response.confidence < 0.1 || !response.answer || response.answer.trim() === "") {
-        finalAnswer = "No relevant information found";
-      }
-      setMessages(prev => [...prev, { role: "ai", text: finalAnswer, response }])
+    onSuccess: (res) => {
+      setMessages(prev => [...prev, { role: "ai", text: res.answer, response: res }])
     },
     onError: () => {
       setMessages(prev => [...prev, { role: "ai", text: "Unable to connect to the backend. Please ensure the server is running." }])
@@ -126,33 +125,92 @@ export default function QueryEnginePage() {
                 </div>
               )}
               {messages.map((msg, i) => (
-                <div key={i} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
-                  {msg.role === "ai" && (
-                    <div className="flex items-start gap-3 max-w-[85%]">
-                      <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-primary/10">
-                        <Sparkles className="h-4 w-4 text-primary" />
+                <div key={i} className={`flex w-full ${msg.role === "user" ? "justify-end" : "justify-start animate-in fade-in slide-in-from-bottom-2 duration-500"}`}>
+                  {msg.role === "ai" ? (
+                    <div className="flex items-start gap-4 max-w-[90%] lg:max-w-[80%] group/msg">
+                      <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-primary/15 to-primary/5 shadow-sm border border-primary/10">
+                        <Sparkles className="h-4.5 w-4.5 text-primary" />
                       </div>
-                      <div className="space-y-3">
-                        <div className="rounded-2xl rounded-tl-none bg-muted px-4 py-3 text-sm text-foreground leading-relaxed whitespace-pre-line">{msg.text}</div>
+                      <div className="flex-1 space-y-3 min-w-0">
+                        <div className={`relative rounded-3xl rounded-tl-none px-6 py-5 text-sm text-foreground leading-relaxed shadow-sm border border-border/60 bg-card/50 backdrop-blur-[2px] font-sans transition-all
+                          ${msg.response && (msg.response.confidence ?? 0) < 0.25 ? "bg-amber-50/10 border-amber-200/20" : ""}`}>
+                          
+                          <div className="prose prose-sm prose-slate dark:prose-invert max-w-none prose-p:leading-relaxed prose-pre:bg-muted/50 prose-pre:border prose-pre:border-border/50">
+                            <ReactMarkdown 
+                              remarkPlugins={[remarkGfm]}
+                              components={{
+                                p: ({children}) => <p className="mb-3 last:mb-0 text-[14.5px] leading-[1.65] font-serif opacity-95">{children}</p>,
+                                ul: ({children}) => <ul className="mb-4 space-y-2 list-none p-0">{children}</ul>,
+                                li: ({children}) => (
+                                  <li className="flex items-start gap-3">
+                                    <div className="h-1.5 w-1.5 rounded-full bg-primary/40 mt-2 flex-shrink-0" />
+                                    <span className="text-[14px] leading-relaxed opacity-90">{children}</span>
+                                  </li>
+                                ),
+                                strong: ({children}) => <strong className="font-bold text-foreground underline decoration-primary/20 underline-offset-2">{children}</strong>,
+                                h1: ({children}) => <h1 className="text-lg font-serif font-bold text-foreground mt-4 mb-2">{children}</h1>,
+                                h2: ({children}) => <h2 className="text-base font-serif font-bold text-foreground mt-4 mb-2">{children}</h2>,
+                                h3: ({children}) => <h3 className="text-sm font-serif font-bold text-foreground mt-3 mb-1">{children}</h3>,
+                              }}
+                            >
+                              {msg.text || "Thinking..."}
+                            </ReactMarkdown>
+                          </div>
+
+                          {/* Copy Button */}
+                          <div className="absolute right-3 top-3 opacity-0 group-hover/msg:opacity-100 transition-opacity">
+                            <Button 
+                              variant="ghost" 
+                              size="icon" 
+                              className="h-7 w-7 rounded-full text-muted-foreground hover:text-primary hover:bg-primary/10"
+                              onClick={() => {
+                                navigator.clipboard.writeText(msg.text);
+                                toast.success("Copied to clipboard");
+                              }}
+                            >
+                              <Copy className="h-3.5 w-3.5" />
+                            </Button>
+                          </div>
+                        </div>
+
                         {/* Analysis Scope & Results */}
                         {msg.response && (
-                          <div className="flex items-center gap-2">
+                          <div className="flex flex-wrap items-center gap-2 px-1">
                             {msg.response.meetings_used > 1 && (
-                              <Badge variant="secondary" className="text-[10px] bg-primary/10 text-primary border-none font-bold animate-in fade-in zoom-in duration-500">
+                              <Badge variant="secondary" className="text-[10px] bg-primary/5 text-primary/80 border-primary/10 font-bold">
                                 Analyzing {msg.response.meetings_used} meetings
                               </Badge>
                             )}
-                            <span className="text-xs text-muted-foreground">{msg.response.meetings_used} meeting{msg.response.meetings_used !== 1 ? "s" : ""} searched</span>
+                            {msg.response.confidence > 0 && (
+                                <Badge 
+                                    variant="outline" 
+                                    className={`text-[10px] bg-background/50 border-none font-bold shadow-sm flex items-center gap-1.5
+                                        ${msg.response.confidence >= 0.7 ? "text-emerald-600 bg-emerald-50/50" : msg.response.confidence >= 0.45 ? "text-primary bg-primary/5" : "text-amber-600 bg-amber-50/50"}`}
+                                >
+                                    <Sparkles className="h-2.5 w-2.5" />
+                                    {Math.round(msg.response.confidence * 100)}% {getConfidenceLabel(msg.response.confidence)}
+                                </Badge>
+                            )}
+                            {msg.response.confidence < 0.25 && (
+                              <Badge variant="outline" className="text-[10px] bg-amber-50 text-amber-700 border-amber-200/50 font-bold animate-pulse">
+                                <AlertCircle className="h-2.5 w-2.5 mr-1" /> Semantic Inference
+                              </Badge>
+                            )}
                             
+                            <div className="flex items-center gap-1 text-[10px] text-muted-foreground/60 font-medium ml-1">
+                              <FileText className="h-2.5 w-2.5" />
+                              {msg.response.meetings_used} searched
+                            </div>
+
                             {/* View Sources Toggle */}
                             {msg.response.sources.length > 0 && (
                               <Button 
                                 variant="ghost" 
                                 size="sm" 
-                                className="h-6 px-2 text-[10px] font-bold text-primary hover:bg-primary/10 transition-all flex items-center gap-1.5 ml-auto"
+                                className="h-7 px-2.5 text-[10px] font-bold text-primary/80 hover:text-primary hover:bg-primary/5 transition-all flex items-center gap-1.5 ml-auto border border-primary/10 rounded-full"
                                 onClick={() => toggleSources(i)}
                               >
-                                {expandedMessages.has(i) ? "Hide Evidence" : `Show Evidence (${msg.response.sources.length} segments)`}
+                                {expandedMessages.has(i) ? "Hide Evidence" : `Show Evidence (${msg.response.sources.length})`}
                                 <MessageSquare className={`h-2.5 w-2.5 transition-transform duration-300 ${expandedMessages.has(i) ? "rotate-180" : ""}`} />
                               </Button>
                             )}
@@ -161,19 +219,18 @@ export default function QueryEnginePage() {
                         {/* Sources - Expanded View */}
                         {msg.response && msg.response.sources.length > 0 && expandedMessages.has(i) && (
                           <div className="space-y-4 mt-6 pt-6 border-t border-border/50 animate-in slide-in-from-top-4 duration-500">
-                            <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground/80">
-                              <MessageSquare className="h-3 w-3 text-primary" />
-                              Sources & Traceable Evidence
+                            <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60 px-1">
+                              <Sparkles className="h-3 w-3 text-primary/40" />
+                              Traceable Context & Evidence
                             </div>
                             <div className="space-y-6">
                               {Object.entries(groupSourcesByMeeting(msg.response.sources)).map(([mId, mData]: [string, any]) => (
                                 <div key={mId} className="space-y-3">
-                                  <div className="flex items-center gap-2">
-                                    <div className="h-px flex-1 bg-gradient-to-r from-transparent via-border to-transparent" />
-                                    <span className="text-[10px] font-mono font-medium text-muted-foreground bg-muted/50 px-2 py-0.5 rounded-full border border-border/50">
+                                  <div className="flex items-center gap-3">
+                                    <span className="text-[10px] font-mono font-bold text-primary/70 bg-primary/5 px-2.5 py-1 rounded-md border border-primary/10">
                                       {mData.title}
                                     </span>
-                                    <div className="h-px flex-1 bg-gradient-to-r from-border via-border to-transparent" />
+                                    <div className="h-px flex-1 bg-gradient-to-r from-border/50 to-transparent" />
                                   </div>
                                   <div className="grid grid-cols-1 gap-3">
                                     {mData.items.map((src: any, si: number) => (
@@ -182,27 +239,21 @@ export default function QueryEnginePage() {
                                         href={`/app/transcripts?id=${src.meeting_id}&segment=${src.segment_id}`}
                                         className="group block"
                                       >
-                                        <div className="rounded-xl border border-border bg-card p-4 transition-all duration-300 hover:border-primary/50 hover:shadow-xl hover:-translate-y-1 cursor-pointer ring-primary/0 hover:ring-4 ring-primary/5">
-                                          <div className="flex items-center justify-between mb-2.5">
+                                        <div className="rounded-2xl border border-border/50 bg-background/50 p-4 transition-all duration-300 hover:border-primary/30 hover:shadow-lg hover:-translate-y-0.5 cursor-pointer">
+                                          <div className="flex items-center justify-between mb-2">
                                             <div className="flex items-center gap-2">
-                                              <div className="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center text-[10px] font-bold text-primary">
+                                              <div className="h-6 w-6 rounded-full bg-muted flex items-center justify-center text-[10px] font-bold text-muted-foreground border border-border">
                                                 {src.speaker?.[0]?.toUpperCase() || "?"}
                                               </div>
-                                              <span className="text-xs font-bold text-foreground group-hover:text-primary transition-colors">{src.speaker || "Unknown"}</span>
-                                              {src.role && <span className="text-[10px] text-muted-foreground font-medium italic opacity-70">({src.role})</span>}
+                                              <span className="text-xs font-bold text-foreground/80 group-hover:text-primary transition-colors">{src.speaker || "Unknown"}</span>
                                             </div>
-                                            <div className="flex items-center gap-2">
-                                              {src.emotion && (
-                                                <Badge variant="outline" className="text-[9px] h-4.5 px-2 bg-primary/5 text-primary border-primary/20 font-semibold group-hover:bg-primary/10 transition-colors capitalize">
-                                                  {src.emotion}
-                                                </Badge>
-                                              )}
-                                              <div className="text-[10px] text-primary font-bold opacity-0 group-hover:opacity-100 translate-x-2 group-hover:translate-x-0 transition-all duration-300 flex items-center gap-1">
-                                                Jump to discussion <Send className="h-2.5 w-2.5 rotate-45" />
-                                              </div>
-                                            </div>
+                                            {src.emotion && (
+                                              <Badge variant="outline" className="text-[9px] h-4.5 px-2 bg-muted/30 text-muted-foreground border-border/50 font-medium capitalize">
+                                                {src.emotion}
+                                              </Badge>
+                                            )}
                                           </div>
-                                          <p className="text-xs text-muted-foreground line-clamp-3 leading-relaxed italic group-hover:text-foreground transition-colors overflow-hidden relative">
+                                          <p className="text-xs text-muted-foreground/80 line-clamp-2 leading-relaxed italic group-hover:text-foreground/90 transition-colors">
                                             "{src.text}"
                                           </p>
                                         </div>
@@ -216,9 +267,10 @@ export default function QueryEnginePage() {
                         )}
                       </div>
                     </div>
-                  )}
-                  {msg.role === "user" && (
-                    <div className="rounded-2xl rounded-tr-none bg-primary px-4 py-3 text-sm text-primary-foreground max-w-[70%]">{msg.text}</div>
+                  ) : (
+                    <div className="rounded-3xl rounded-tr-none bg-primary px-5 py-3 text-sm text-primary-foreground max-w-[75%] shadow-md border border-primary/20 font-medium animate-in fade-in slide-in-from-bottom-2 duration-300">
+                      {msg.text}
+                    </div>
                   )}
                 </div>
               ))}
@@ -270,10 +322,10 @@ export default function QueryEnginePage() {
           <CardContent className="p-4 space-y-3 text-sm text-muted-foreground">
             <p className="text-xs font-medium text-foreground">How it works</p>
             <div className="space-y-2">
-              <div className="flex gap-2"><span className="text-primary font-mono text-xs mt-0.5">1</span><span>Your query is embedded via MiniLM</span></div>
-              <div className="flex gap-2"><span className="text-primary font-mono text-xs mt-0.5">2</span><span>Top 10 segments retrieved from FAISS index</span></div>
-              <div className="flex gap-2"><span className="text-primary font-mono text-xs mt-0.5">3</span><span>BGE Reranker refines results for precision</span></div>
-              <div className="flex gap-2"><span className="text-primary font-mono text-xs mt-0.5">4</span><span>Llama 3.3-70B synthesizes the answer</span></div>
+              <div className="flex gap-2"><span className="text-primary font-mono text-xs mt-0.5">1</span><span>Context detection identifies "Focused" vs "Global" intents</span></div>
+              <div className="flex gap-2"><span className="text-primary font-mono text-xs mt-0.5">2</span><span>Adaptive search expands to 100 segments for broad queries</span></div>
+              <div className="flex gap-2"><span className="text-primary font-mono text-xs mt-0.5">3</span><span>Diversity sampling ensures balanced multi-meeting representation</span></div>
+              <div className="flex gap-2"><span className="text-primary font-mono text-xs mt-0.5">4</span><span>BGE Reranker selects high-precision evidence for the LLM</span></div>
             </div>
           </CardContent>
         </Card>

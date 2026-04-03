@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Progress } from "@/components/ui/progress"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { updateTask, MappedActionItem, getMeetings, mapActionItem, BackendMeeting } from "@/lib/api"
+import { updateTaskStatus, MappedActionItem, getMeetings, normalizeActionItem, BackendMeeting } from "@/lib/api"
 import { CheckCircle2, Users, Loader2, AlertCircle, RefreshCw } from "lucide-react"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 
@@ -20,9 +20,16 @@ export default function ActionTrackerPage() {
 
   const items = useMemo(() => {
     return (meetings as BackendMeeting[]).flatMap(m => 
-      (m.analysis?.action_items || []).map((item, idx) => mapActionItem(item, idx, m._id, m.analysis?.meeting_name || "Unknown"))
+      (m.analysis?.action_items || []).map((item, idx) => normalizeActionItem(item, idx, m._id, m.analysis?.meeting_name || "Unknown"))
     )
   }, [meetings])
+
+
+  const getStatusStyle = (status: string) => {
+    if (status === "DONE") return "bg-green-100 text-green-700 border-none font-bold";
+    if (status === "OVERDUE") return "bg-red-100 text-red-700 border-none font-bold";
+    return "bg-amber-100 text-amber-700 border-none font-bold";
+  }
 
   const [toggling, setToggling] = useState<string | null>(null)
   const [statusFilter, setStatusFilter] = useState<"All" | "Pending" | "Done">("All")
@@ -43,7 +50,7 @@ export default function ActionTrackerPage() {
 
   const toggleMutation = useMutation({
     mutationFn: ({ meetingId, taskId, status }: { meetingId: string, taskId: number, status: string }) => 
-      updateTask(meetingId, taskId, status),
+      updateTaskStatus(meetingId, taskId, status),
     onSuccess: (_, req) => {
       queryClient.invalidateQueries({ queryKey: ['meetings'] })
       queryClient.invalidateQueries({ queryKey: ['meeting', req.meetingId] })
@@ -137,7 +144,7 @@ export default function ActionTrackerPage() {
               <Card key={key} className={`transition-all hover:shadow-md ${isVisuallyDone ? "opacity-60 bg-muted/20" : ""}`}>
                 <CardContent className="flex items-center justify-between p-4">
                   <div className="flex items-center gap-4">
-                    <Badge className={isVisuallyDone ? "bg-green-100 text-green-700" : item.statusColor}>{isVisuallyDone ? "DONE" : item.status}</Badge>
+                    <Badge className={isVisuallyDone ? "bg-green-100 text-green-700 border-none font-bold" : getStatusStyle(item.status)}>{isVisuallyDone ? "DONE" : item.status}</Badge>
                     <div>
                       <p className={`text-xs ${isVisuallyDone ? "line-through text-muted-foreground/60" : "text-muted-foreground"}`}>{item.meetingName}</p>
                       <h3 className={`font-medium ${isVisuallyDone ? "line-through text-muted-foreground/80" : "text-foreground"}`}>{item.title}</h3>
@@ -150,12 +157,11 @@ export default function ActionTrackerPage() {
                       </Avatar>
                       <div>
                         <p className={`text-sm font-medium ${isVisuallyDone ? "line-through text-muted-foreground/70" : "text-foreground"}`}>{item.assignee.name}</p>
-                        <p className={`text-xs ${isVisuallyDone ? "line-through text-muted-foreground/50" : "text-muted-foreground"}`}>{item.assignee.role}</p>
                       </div>
                     </div>
                     <div className="text-right">
                       <p className={`text-xs ${isVisuallyDone ? "line-through text-muted-foreground/50" : "text-muted-foreground"}`}>{isVisuallyDone ? "COMPLETED" : "DUE DATE"}</p>
-                      <p className={`text-sm font-medium ${isVisuallyDone ? "line-through text-muted-foreground/70" : item.dueDateColor}`}>{item.dueDate}</p>
+                      <p className={`text-sm font-medium ${isVisuallyDone ? "line-through text-muted-foreground/70" : "text-primary"}`}>{item.dueDate}</p>
                     </div>
                     <Button 
                       variant="ghost" 

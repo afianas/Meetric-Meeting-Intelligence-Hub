@@ -11,18 +11,16 @@ router = APIRouter()
 @router.get("/search")
 def search_meetings(query: str):
     meetings = get_all_meetings()
-
     results = []
 
     for meeting in meetings:
         analysis = meeting.get("analysis", {})
-
+        m_name = analysis.get("meeting_name") or "Untitled Meeting"
+        
         decisions = analysis.get("decisions", [])
-        action_items = analysis.get("action_items", [])
+        action_items = [item.get("task", "") for item in analysis.get("action_items", [])]
 
-        combined_text = " ".join(decisions) + " " + " ".join(
-            [item.get("task", "") for item in action_items]
-        )
+        combined_text = f"{m_name} " + " ".join(decisions) + " " + " ".join(action_items)
 
         if query.lower() in combined_text.lower():
             results.append(meeting)

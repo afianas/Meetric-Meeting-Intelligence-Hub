@@ -3,31 +3,33 @@ import math
 
 from app.services.embedding_service import get_embedding
 from app.services.vector_service import search_vector
-from app.services.storage_service import get_segments_by_ids
+from app.services.storage_service import get_segments_by_ids, get_all_meeting_titles_and_ids
 from app.services.reranker_service import rerank
 from app.services.chat_service import generate_answer
 
 router = APIRouter()
 
 
-def calibrated_confidence(score: float) -> float:
-    # 1. Scaled Sigmoid (mild scaling)
-    scaled = score * 1.2
-    prob = 1 / (1 + math.exp(-scaled))
+def sigmoid(x: float) -> float:
+    """Standard sigmoid function for logit-to-probability mapping."""
+    return 1 / (1 + math.exp(-x))
+
+
+def calibrated_confidence(score: float | None) -> float:
+    """Map relevance score (Inner Product or Reranker) to confidence.
     
-    # 2. Confidence Stretching (removes mid-range bias)
-    # pushes weak matches lower, strong matches higher
-    stretched = (prob - 0.3) / 0.7
-    conf = min(max(stretched, 0.0), 1.0)
-    
-    # 3. Hard Thresholding for bad retrieval
-    if score < -0.5:
-        conf = min(conf, 0.25)
+    After migration to BGE-Reranker, scores are logits. 
+    Sigmoid activation transforms these into a meaningful [0, 1] range.
+    Smoothing factor of 2.0 is applied to prevent overconfidence.
+    """
+    if score is None:
+        return 0.0
         
-    # 4. Floor & Ceiling (UX Stability)
-    conf = max(0.05, min(conf, 0.98))
+    # Apply sigmoid with 2.0 smoothing as per implementation plan
+    conf = sigmoid(float(score) / 2.0)
     
-    return float(conf)
+    # 3. Ceiling (UX Stability)
+    return min(conf, 0.98)
 
 
 def detect_query_mode(query: str, meeting_id: str = None) -> str:
@@ -37,7 +39,14 @@ def detect_query_mode(query: str, meeting_id: str = None) -> str:
     
     query_lc = query.lower()
     
-    # Global Keywords/Intents
+    # 1st Pass: Check for explicit meeting names in query (Case-Insensitive)
+    # This allows users to say "What happened in the Project X meeting?" and get focused results.
+    existing_meetings = get_all_meeting_titles_and_ids()
+    for m in existing_meetings:
+        if m["title"].lower() in query_lc:
+            return "focused"
+
+    # 2nd Pass: Global Keywords/Intents
     global_patterns = [
         "across meetings", "all meetings", "summarize meetings", 
         "trends", "overall", "compare", "similarities", "differences",
@@ -190,9 +199,7 @@ Emotion: {seg.get('emotion')}
         })
         meeting_ids_seen.add(seg.get("meeting_id", "unknown"))
 
-    # If we found sources but confidence ended up 0, force a 5% floor
-    if rich_sources and confidence < 0.05:
-        confidence = 0.05
+    # Step 10: Build rich sources (defensive field checks)
 
     return {
         "query": str(query),
