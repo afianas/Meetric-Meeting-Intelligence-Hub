@@ -2,8 +2,8 @@ from app.services.vector_service import add_vector, reset_vectors
 from bson import ObjectId
 
 def get_all_meeting_titles_and_ids():
-    meetings = list(collection.find({}, {"analysis.title": 1, "_id": 1}))
-    return [{"id": str(m["_id"]), "title": m.get("analysis", {}).get("title", "Unnamed Meeting")} for m in meetings]
+    meetings = list(collection.find({}, {"analysis.meeting_name": 1, "_id": 1}))
+    return [{"id": str(m["_id"]), "title": m.get("analysis", {}).get("meeting_name", "Unnamed Meeting")} for m in meetings]
 
 def get_all_meetings():
     meetings = list(collection.find())
@@ -86,9 +86,10 @@ def get_segments_by_ids(segment_ids):
     # Find any meeting containing at least one of these segment IDs
     for meeting in collection.find({"segments.segment_id": {"$in": segment_ids}}):
         m_id = str(meeting["_id"])
-        # Fetch title or use truncated ID as fallback to avoid merging unrelated "Unnamed" meetings
+        # Fetch canonical meeting name from analysis
         analysis = meeting.get("analysis", {})
-        m_title = analysis.get("title") or meeting.get("meeting_title")
+        m_title = analysis.get("meeting_name") or analysis.get("title") or meeting.get("meeting_title")
+        
         if not m_title or m_title == "Unnamed Meeting":
             m_title = f"Meeting {m_id[-6:].upper()}"
         

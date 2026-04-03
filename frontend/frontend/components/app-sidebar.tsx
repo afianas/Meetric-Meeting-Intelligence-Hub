@@ -41,7 +41,7 @@ export function AppSidebar() {
         </div>
         <div>
           <span className="font-serif text-lg font-semibold text-foreground italic">Meetric</span>
-          <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Dialogue Intelligence</p>
+          <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Meeting Intelligence Hub</p>
         </div>
       </Link>
 

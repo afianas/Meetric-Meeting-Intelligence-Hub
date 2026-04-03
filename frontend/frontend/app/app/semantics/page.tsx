@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
-import { getSpeakerAnalytics, getSentimentFlow, getSentimentInsight, getMeetings } from "@/lib/api"
+import { getSpeakerAnalytics, getSentimentFlow, getSentimentInsight, getMeetings, getInitials } from "@/lib/api"
 import { Sparkles, RefreshCw, MessageSquare, User, TrendingUp, Info, Activity, Zap } from "lucide-react"
 import { useQuery } from "@tanstack/react-query"
 import {
@@ -15,14 +15,8 @@ import {
 } from "recharts"
 import Link from "next/link"
 
-const AVATAR_POOL = [
-  "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=50&h=50&fit=crop&crop=face",
-  "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=50&h=50&fit=crop&crop=face",
-  "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=50&h=50&fit=crop&crop=face",
-  "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=50&h=50&fit=crop&crop=face",
-]
 function avatarFor(name: string) {
-  let h = 0; for (let i = 0; i < name.length; i++) h = (h + name.charCodeAt(i)) % AVATAR_POOL.length; return AVATAR_POOL[h]
+  return null; // No human images
 }
 
 const EMOTIONS = ["agreement", "concern", "conflict", "uncertainty", "neutral"]
@@ -143,7 +137,7 @@ export default function SpeakerIntelligencePage() {
 
       {/* Hero Split Section: Insight vs Dominant Tone */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-        <Card className="lg:col-span-8 border-border/40 bg-background/40 backdrop-blur-md shadow-2xl overflow-hidden relative group rounded-3xl flex items-center">
+        <Card className="lg:col-span-8 border-border/40 bg-background/40 backdrop-blur-md shadow-sm overflow-hidden relative group rounded-3xl flex items-center">
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_0%,var(--color-primary),transparent)] opacity-10" />
             <CardContent className="p-8 md:p-10 relative w-full">
                 <div className="space-y-6">
@@ -157,7 +151,7 @@ export default function SpeakerIntelligencePage() {
             </CardContent>
         </Card>
 
-        <Card className="lg:col-span-4 border-border/40 bg-background/40 backdrop-blur-md shadow-xl rounded-3xl overflow-hidden relative group flex flex-col items-center justify-center p-8 text-center transition-all hover:border-primary/20">
+        <Card className="lg:col-span-4 border-border/40 bg-background/40 backdrop-blur-md shadow-sm rounded-3xl overflow-hidden relative group flex flex-col items-center justify-center p-8 text-center transition-all hover:border-primary/20">
             <div className="absolute top-0 right-0 p-4">
                 <Zap className="h-5 w-5 text-primary opacity-20" />
             </div>
@@ -188,7 +182,7 @@ export default function SpeakerIntelligencePage() {
       {/* Dual Analytics Row */}
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
         {/* Radar Map (40%) */}
-        <Card className="lg:col-span-2 border-border/40 shadow-sm transition-all hover:border-primary/20 rounded-3xl bg-background/40 backdrop-blur-sm">
+        <Card className="lg:col-span-2 border-border/40 shadow-sm transition-all hover:border-primary/10 rounded-3xl bg-background/40 backdrop-blur-sm">
           <CardHeader className="p-8 pb-0">
             <CardTitle className="text-xs font-bold uppercase tracking-[0.2em] text-muted-foreground flex items-center justify-between">
               <span className="flex items-center gap-2">
@@ -226,8 +220,13 @@ export default function SpeakerIntelligencePage() {
                 Conversation Flow Dynamics
               </CardTitle>
               <div className="flex gap-2">
-                <Badge variant="outline" className="text-[9px] bg-green-500/10 text-green-600 border-none">Agreement</Badge>
-                <Badge variant="outline" className="text-[9px] bg-orange-500/10 text-orange-600 border-none">Conflict</Badge>
+                {Object.entries(EMOTION_COLORS).slice(0, 2).map(([emo, color]) => (
+                  <Badge key={emo} variant="outline" 
+                    className="text-[9px] font-sans font-bold uppercase tracking-widest border-none px-2 h-5 rounded-md"
+                    style={{ backgroundColor: `${color}15`, color }}>
+                    {emo}
+                  </Badge>
+                ))}
               </div>
             </div>
           </CardHeader>
@@ -245,13 +244,18 @@ export default function SpeakerIntelligencePage() {
                       if (active && payload?.[0]) {
                         const d = payload[0].payload;
                         return (
-                          <div className="bg-background/90 backdrop-blur-xl border border-border/50 p-4 rounded-2xl shadow-2xl max-w-[280px]">
+                          <div className="bg-background/95 backdrop-blur-xl border border-border/40 p-4 rounded-xl shadow-lg max-w-[280px]">
                             <div className="flex items-center gap-3 mb-2">
-                              <Avatar className="h-6 w-6">
-                                <img src={avatarFor(d.speaker)} />
+                              <Avatar className="h-6 w-6 border border-border/40 bg-muted">
+                                <AvatarFallback className="text-[10px] font-bold text-muted-foreground">{getInitials(d.speaker)}</AvatarFallback>
                               </Avatar>
                               <span className="text-[10px] font-bold text-foreground truncate">{d.speaker}</span>
-                              <Badge style={{ backgroundColor: `${EMOTION_COLORS[d.emotion]}20`, color: EMOTION_COLORS[d.emotion] }} className="ml-auto text-[8px] border-none font-bold lowercase">{d.emotion}</Badge>
+                              <Badge 
+                                style={{ backgroundColor: `${EMOTION_COLORS[d.emotion]}15`, color: EMOTION_COLORS[d.emotion] }} 
+                                className="ml-auto text-[8px] border-none font-sans font-bold uppercase tracking-widest px-2 h-5 rounded-md"
+                              >
+                                {d.emotion}
+                              </Badge>
                             </div>
                             <p className="text-[11px] text-muted-foreground line-clamp-2 leading-relaxed font-medium italic">"{d.text}"</p>
                           </div>
@@ -260,8 +264,8 @@ export default function SpeakerIntelligencePage() {
                       return null;
                     }}
                   />
-                  <Area type="monotone" dataKey="val" stroke="var(--color-primary)" strokeWidth={3} fillOpacity={0.05} fill="var(--color-primary)"
-                    activeDot={{ r: 8, strokeWidth: 4, stroke: "var(--color-background)", fill: "var(--color-primary)" }} />
+                   <Area type="monotone" dataKey="val" stroke="var(--color-primary)" strokeWidth={3} fillOpacity={0.05} fill="var(--color-primary)"
+                    activeDot={{ r: 8, strokeWidth: 4, stroke: "white", fill: "var(--color-primary)" }} />
                 </AreaChart>
               </ResponsiveContainer>
             ) : (
@@ -294,8 +298,8 @@ export default function SpeakerIntelligencePage() {
               return (
                 <div key={speaker} className="flex items-center gap-6">
                   <div className="w-32 shrink-0 flex items-center gap-2">
-                    <Avatar className="h-5 w-5 border border-border/20 grayscale hover:grayscale-0 transition-all">
-                      <img src={avatarFor(speaker)} />
+                    <Avatar className="h-5 w-5 border border-border/20 bg-muted">
+                        <AvatarFallback className="text-[8px] font-bold text-muted-foreground">{getInitials(speaker)}</AvatarFallback>
                     </Avatar>
                     <span className="text-[10px] font-bold uppercase tracking-widest text-foreground/70 truncate">{speaker}</span>
                   </div>
@@ -353,11 +357,11 @@ export default function SpeakerIntelligencePage() {
             </div>
 
             {selectedSegment ? (
-            <Card className="border-primary/20 bg-primary/5 shadow-xl rounded-3xl overflow-hidden relative animate-in zoom-in-95 duration-500">
+            <Card className="border-primary/10 bg-primary/5 shadow-sm rounded-3xl overflow-hidden relative animate-in zoom-in-95 duration-500">
                 <CardContent className="p-6 space-y-6">
                 <div className="flex items-center gap-6">
-                    <Avatar className="h-14 w-14 border-2 border-background shadow-lg ring-2 ring-primary/5 shrink-0">
-                        <img src={avatarFor(selectedSegment.speaker)} className="object-cover" />
+                        <Avatar className="h-14 w-14 border border-background shadow-md shrink-0 bg-muted">
+                            <AvatarFallback className="text-xl font-bold text-muted-foreground">{getInitials(selectedSegment.speaker)}</AvatarFallback>
                     </Avatar>
                     <div className="space-y-1.5 flex-1 min-w-0">
                         <p className="text-xl font-serif font-black text-foreground truncate">
@@ -419,11 +423,11 @@ export default function SpeakerIntelligencePage() {
             <h3 className="font-serif text-xl font-bold px-2">Emotional Footprint</h3>
             <div className="space-y-4">
             {speakers.slice(0, 3).map(s => (
-                <Card key={`footprint-${s.speaker}`} className="border-border/20 bg-card/20 backdrop-blur-md rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-all">
+                <Card key={`footprint-${s.speaker}`} className="border-border/30 bg-card/10 backdrop-blur-md rounded-2xl overflow-hidden shadow-none hover:shadow-sm transition-all hover:border-border/50">
                     <CardContent className="p-4 space-y-4">
                         <div className="flex items-center gap-3">
-                            <Avatar className="h-10 w-10 border-2 border-background shadow-md grayscale hover:grayscale-0 transition-all">
-                                <img src={avatarFor(s.speaker)} className="object-cover" />
+                            <Avatar className="h-10 w-10 border-2 border-background shadow-md bg-muted">
+                                <AvatarFallback className="font-bold text-muted-foreground">{getInitials(s.speaker)}</AvatarFallback>
                             </Avatar>
                             <div>
                                 <p className="text-sm font-serif font-black text-foreground leading-none mb-1">{s.speaker}</p>

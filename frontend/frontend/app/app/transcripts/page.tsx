@@ -9,17 +9,11 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Input } from "@/components/ui/input"
 import { ChevronLeft, Download, Clock, Users, MessageSquare, CheckCircle2, Loader2, AlertCircle, FileText, Sparkles } from "lucide-react"
 import Link from "next/link"
-import { getMeeting, getMeetings, downloadReport, normalizeMeeting, normalizeDecision, normalizeActionItem, BackendMeeting, BackendSegment, updateTaskStatus } from "@/lib/api"
+import { getMeeting, getMeetings, downloadReport, normalizeMeeting, normalizeDecision, normalizeActionItem, BackendMeeting, BackendSegment, updateTaskStatus, getInitials } from "@/lib/api"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 
-const AVATAR_POOL = [
-  "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=50&h=50&fit=crop&crop=face",
-  "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=50&h=50&fit=crop&crop=face",
-  "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=50&h=50&fit=crop&crop=face",
-  "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=50&h=50&fit=crop&crop=face",
-]
 function avatarFor(name: string) {
-  let h = 0; for (let i = 0; i < name.length; i++) h = (h + name.charCodeAt(i)) % AVATAR_POOL.length; return AVATAR_POOL[h]
+  return null; // No human images
 }
 
 function emotionBadgeStyle(emotion: string) {
@@ -142,7 +136,7 @@ function TranscriptsContent() {
             const mapped = normalizeMeeting(m);
             return (
               <Link href={`/app/transcripts?id=${m._id}`} key={m._id}>
-                <Card className="hover:border-primary/50 cursor-pointer transition-all hover:shadow-md h-full">
+                <Card className="hover:bg-muted/10 border-border/40 cursor-pointer transition-all h-full">
                   <CardContent className="p-5 flex flex-col justify-between h-full gap-4">
                     <div className="flex items-start gap-4">
                       <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 flex-shrink-0">
@@ -263,11 +257,10 @@ function TranscriptsContent() {
                   className={`flex gap-4 rounded-lg p-3 transition-all duration-700 
                     ${isActive ? "bg-primary/15 ring-2 ring-primary/40 animate-source-pulse" : 
                       isInContext ? "bg-primary/5 border border-primary/10 animate-highlight-fade" : 
-                      "hover:bg-muted/30"}`}
+                    "hover:bg-muted/20 border border-transparent hover:border-border/10"}`}
                 >
-                  <Avatar className="h-10 w-10 flex-shrink-0">
-                    <img src={avatarFor(seg.speaker)} alt={seg.speaker} className="rounded-full object-cover" />
-                    <AvatarFallback>{seg.speaker?.[0] || "?"}</AvatarFallback>
+                  <Avatar className="h-10 w-10 flex-shrink-0 border border-border/40 bg-muted">
+                    <AvatarFallback className="font-bold text-muted-foreground">{getInitials(seg.speaker)}</AvatarFallback>
                   </Avatar>
                   <div className="flex-1">
                     <div className="flex items-center gap-2 flex-wrap">
@@ -352,9 +345,8 @@ function TranscriptsContent() {
                 <div className="space-y-2">
                   {uniqueSpeakers.map(name => (
                     <div key={name} className="flex items-center gap-2">
-                      <Avatar className="h-7 w-7">
-                        <img src={avatarFor(name)} alt={name} className="rounded-full object-cover" />
-                        <AvatarFallback>{name?.[0] || "?"}</AvatarFallback>
+                      <Avatar className="h-7 w-7 border border-border/40 bg-muted">
+                        <AvatarFallback className="text-[10px] font-bold text-muted-foreground">{getInitials(name)}</AvatarFallback>
                       </Avatar>
                       <span className="text-sm text-foreground">{name || "Unknown"}</span>
                     </div>

@@ -155,7 +155,7 @@ def chat(query: str, meeting_id: str = None):
     for seg in selected_segments:
         m_title = seg.get("meeting_title", "Unnamed Meeting")
         part = f"""
-Meeting: {m_title} (ID: {seg.get('meeting_id', 'unknown')})
+Meeting: {m_title}
 Speaker: {seg.get('speaker')} ({seg.get('role')})
 Text: {seg.get('text')}
 Emotion: {seg.get('emotion')}

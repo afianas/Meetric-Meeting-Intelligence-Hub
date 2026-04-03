@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Progress } from "@/components/ui/progress"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { updateTaskStatus, MappedActionItem, getMeetings, normalizeActionItem, BackendMeeting } from "@/lib/api"
+import { updateTaskStatus, MappedActionItem, getMeetings, normalizeActionItem, BackendMeeting, getInitials } from "@/lib/api"
 import { CheckCircle2, Users, Loader2, AlertCircle, RefreshCw } from "lucide-react"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 
@@ -152,8 +152,8 @@ export default function ActionTrackerPage() {
                   </div>
                   <div className="flex items-center gap-6">
                     <div className="flex items-center gap-3">
-                      <Avatar className="h-8 w-8">
-                        <AvatarImage src={item.assignee.avatar} /><AvatarFallback>{item.assignee.name[0]}</AvatarFallback>
+                      <Avatar className="h-8 w-8 border border-border/40 bg-muted">
+                        <AvatarFallback className="text-[10px] font-bold text-muted-foreground">{getInitials(item.assignee.name)}</AvatarFallback>
                       </Avatar>
                       <div>
                         <p className={`text-sm font-medium ${isVisuallyDone ? "line-through text-muted-foreground/70" : "text-foreground"}`}>{item.assignee.name}</p>

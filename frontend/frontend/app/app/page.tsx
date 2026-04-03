@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { useRouter } from "next/navigation"
-import { getMeetings, normalizeMeeting, BackendMeeting, MappedMeeting, deleteMeeting, deleteAllMeetings } from "@/lib/api"
+import { getMeetings, normalizeMeeting, BackendMeeting, MappedMeeting, deleteMeeting, deleteAllMeetings, getInitials } from "@/lib/api"
 import { BarChart3, Lightbulb, MessageSquare, ListTodo, Filter, ArrowUpDown, Eye, Trash2, Share2, ChevronRight, TrendingUp, Loader2, AlertCircle } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -66,6 +66,20 @@ export default function DashboardPage() {
     }
   }
 
+  const getSpeakerColor = (name: string) => {
+    const colors = [
+      "bg-slate-100 text-slate-700 border-slate-200",
+      "bg-indigo-100 text-indigo-700 border-indigo-200",
+      "bg-emerald-100 text-emerald-700 border-emerald-200",
+      "bg-rose-100 text-rose-700 border-rose-200",
+      "bg-amber-100 text-amber-700 border-amber-200",
+      "bg-violet-100 text-violet-700 border-violet-200"
+    ];
+    let hash = 0;
+    for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
+    return colors[Math.abs(hash) % colors.length];
+  }
+
   const { data: meetings = [], isLoading: loading, error, refetch: load } = useQuery({
     queryKey: ['meetings'],
     queryFn: getMeetings,
@@ -122,9 +136,9 @@ export default function DashboardPage() {
   }
 
   const stats = [
-    { label: "Total Meetings", value: mapped.length.toString(), sublabel: "METRICS", change: "all time", icon: BarChart3 },
-    { label: "Decisions", value: totalDecisions.toString(), sublabel: "STRATEGIC", change: "extracted by AI", icon: Lightbulb },
-    { label: "Dominant Tone", value: "Agreement", sublabel: "TONE", change: "most common sentiment", icon: MessageSquare },
+    { label: "Total Meetings", value: mapped.length.toString(), sublabel: "METRICS", change: "all time", changeColor: "text-primary", icon: BarChart3 },
+    { label: "Decisions", value: totalDecisions.toString(), sublabel: "STRATEGIC", change: "extracted by AI", changeColor: "text-primary", icon: Lightbulb },
+    { label: "Dominant Tone", value: "Agreement", sublabel: "TONE", change: "most common sentiment", changeColor: "text-primary", icon: MessageSquare },
     { label: "Pending Actions", value: totalPendingActions.toString(), sublabel: "TASKS", change: `${meetingsWithPending} meetings active`, changeColor: "text-primary", icon: ListTodo },
   ]
 
@@ -155,17 +169,17 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {loading ? Array(4).fill(0).map((_, i) => <StatCardSkeleton key={i} />) :
           stats.map(stat => (
-            <Card key={stat.label} className="relative overflow-hidden hover:shadow-md transition-shadow">
+            <Card key={stat.label} className="relative overflow-hidden hover:shadow-sm border-border/40 transition-shadow">
               <CardContent className="p-5">
                 <div className="flex items-start justify-between">
                   <div>
                     <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">{stat.sublabel}</p>
                     <p className="mt-1 text-sm text-muted-foreground">{stat.label}</p>
-                    <p className={`mt-2 font-sans font-black uppercase tracking-widest text-3xl`} 
+                    <p className={`mt-2 font-sans font-black uppercase tracking-widest text-3xl`}
                       style={stat.label === "Dominant Tone" ? { color: EMOTION_COLORS[stat.value.toLowerCase()] || EMOTION_COLORS.neutral } : {}}>
                       {stat.value}
                     </p>
-                    <p className={`mt-1 text-xs ${stat.changeColor || "text-green-600"}`}>{stat.change}</p>
+                    <p className={`mt-1 text-xs ${stat.changeColor || "text-primary"}`}>{stat.change}</p>
                   </div>
                   <div className="rounded-lg bg-primary/10 p-2"><stat.icon className="h-5 w-5 text-primary" /></div>
                 </div>
@@ -186,8 +200,8 @@ export default function DashboardPage() {
                 <p className="mt-2 font-serif text-4xl font-bold">{totalPendingActions} Pending</p>
               )}
               <p className="mt-1 text-sm opacity-80">
-                {totalPendingActions === 0 
-                  ? `You've cleared ${totalActionItems} tasks across ${mapped.length} meetings.` 
+                {totalPendingActions === 0
+                  ? `You've cleared ${totalActionItems} tasks across ${mapped.length} meetings.`
                   : `Across ${meetingsWithPending} of ${mapped.length} meetings`}
               </p>
             </div>
@@ -205,7 +219,7 @@ export default function DashboardPage() {
             <h2 className="font-serif text-xl font-semibold text-foreground">Meeting Intelligence</h2>
             <p className="text-sm text-muted-foreground">Manage your meeting repository and insights.</p>
           </div>
-          
+
           <div className="flex flex-wrap items-center gap-3">
             <Select value={groupBy} onValueChange={(v: "none" | "date" | "name") => setGroupBy(v)}>
               <SelectTrigger className="w-[180px] h-9">
@@ -267,10 +281,10 @@ export default function DashboardPage() {
                     </h3>
                   </div>
                 )}
-                
+
                 <div className="space-y-3">
                   {groupItems.map(meeting => (
-                    <Card key={meeting.id} className="cursor-pointer transition-all hover:shadow-md hover:border-primary/30" onClick={() => router.push(`/app/transcripts?id=${meeting.id}`)}>
+                    <Card key={meeting.id} className="cursor-pointer transition-all hover:bg-muted/30 border-border/40" onClick={() => router.push(`/app/transcripts?id=${meeting.id}`)}>
                       <CardContent className="flex items-center justify-between p-4">
                         <div className="flex items-center gap-4">
                           <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10"><MessageSquare className="h-5 w-5 text-primary" /></div>
@@ -281,9 +295,11 @@ export default function DashboardPage() {
                         </div>
                         <div className="flex items-center gap-6">
                           <div className="hidden sm:flex -space-x-2">
-                            {meeting.avatars.map((avatar, i) => (
-                              <Avatar key={i} className="h-8 w-8 border-2 border-background">
-                                <AvatarImage src={avatar} /><AvatarFallback>U</AvatarFallback>
+                            {meeting.avatars.map((speaker, i) => (
+                              <Avatar key={i} className={`h-8 w-8 border-2 border-background shadow-sm ${getSpeakerColor(speaker)}`}>
+                                <AvatarFallback className="text-[10px] font-bold">
+                                    {getInitials(speaker)}
+                                </AvatarFallback>
                               </Avatar>
                             ))}
                           </div>
@@ -292,7 +308,7 @@ export default function DashboardPage() {
                             <p className="text-lg font-semibold text-foreground">{meeting.words.toLocaleString()}</p>
                             <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Words</p>
                           </div>
-                          <Badge 
+                          <Badge
                             className="hidden md:inline-flex border-none font-sans font-bold uppercase tracking-widest text-[10px]"
                             style={getEmotionStyle(meeting.dominantEmotion)}
                           >
@@ -300,7 +316,7 @@ export default function DashboardPage() {
                           </Badge>
                           <div className="flex items-center gap-1">
                             <Button variant="ghost" size="icon" className="h-8 w-8 hover:text-primary" onClick={e => { e.stopPropagation(); router.push(`/app/transcripts?id=${meeting.id}`) }}><Eye className="h-4 w-4" /></Button>
-                            
+
                             <AlertDialog>
                               <AlertDialogTrigger asChild>
                                 <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive" onClick={(e) => e.stopPropagation()}>

@@ -104,6 +104,15 @@ export function avatarFor(name: string): string {
   return AVATAR_POOL[hash];
 }
 
+export function getInitials(name: string): string {
+  if (!name) return "U";
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length >= 2) {
+    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+  }
+  return name[0].toUpperCase();
+}
+
 export const isTaskCompleted = (item: BackendActionItem) =>
   item.completed || ["completed", "done"].includes((item.status || "").toLowerCase());
 
@@ -131,7 +140,7 @@ export function normalizeMeeting(m: BackendMeeting): MappedMeeting {
     speakers: analysis.speakers_identified || speakers.length,
     words: analysis.word_count || 0,
     dominantEmotion: domEmotion,
-    avatars: speakers.slice(0, 3).map(n => avatarFor(n)),
+    avatars: speakers.slice(0, 3),
     totalDecisions: (analysis.decisions || []).length,
     totalActionItems: (analysis.action_items || []).length,
     pendingActionItems: (analysis.action_items || []).filter(i => !isTaskCompleted(i)).length,
