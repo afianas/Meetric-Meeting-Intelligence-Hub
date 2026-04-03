@@ -62,5 +62,21 @@ The system implements a high-fidelity task management strategy to ensure operati
 - **Asynchronous Tasking:** Implementing Celery/Redis for background processing of large transcript batches.
 - **Real-time Ingestion:** Moving from batch uploads to live WebSocket-based streaming and indexing.
 
-## 8. Why This Design is Effective
+## 8. Calibrated AI Confidence Scoring
+To ensure that AI responses are accompanied by meaningful and interpretable signals, we implement a custom calibration layer for reranker logits:
+- **Top-Logit Signal**: Instead of averaging the similarity scores of all retrieved context segments (which can dilute the signal if some segments are weakly related), we prioritize the score of the top-ranked segment.
+- **Scaled Sigmoid Transformation**: We apply a mild scaling factor to the raw logits before passing them through a sigmoid function. This spreads the distribution and ensures that strong semantic matches move quickly towards high confidence values ($>85\%$).
+- **Bounded Stretching**: We apply a linear stretching transformation to the resulting probability to remove the "mid-range bias" typical of raw sigmoid outputs, pushing weak matches lower and strong matches higher.
+- **Hard Thresholding & Floor/Ceiling**: To maintain UX stability, we apply a hard floor of $5\%$ (to indicate we tried) and a ceiling of $98\%$ (to acknowledge the potential for LLM reasoning errors). Negative top-scores are penalized with a sub-25% cap.
+
+## 9. Diversity-Aware Retrieval Layer
+To address the common RAG challenge of "Single-Meeting Dominance," we implement an adaptive, diversity-aware retrieval pipeline:
+- **Intent Detection**: The system classifies queries into "Focused" (local context) or "Global" (multi-meeting context) modes. Global mode targets keywords like "across," "trends," and "all meetings."
+- **Adaptive Retrieval Parameters**:
+  - **Focused**: Optimizes for local precision ($20$ candidates $\rightarrow 10$ context).
+  - **Global**: Optimizes for breadth ($50$ candidates $\rightarrow 30$ rerank $\rightarrow 15$ diversity-sampled context).
+- **Diversity Sampling Logic**: In global mode, segments are grouped by `meeting_id`. The system ensures at least one top segment from every uniquely found meeting is included in the LLM context, preventing any one meeting from crowding out the summary.
+- **Synthesized Prompting**: When multiple meetings are retrieved, the LLM is conditioned with a specialized comparative prompt to identify cross-meeting patterns.
+
+## 10. Why This Design is Effective
 This architecture balances architectural simplicity with high-performance intelligence. By integrating retrieval, reasoning, and execution layers, the system provides more than just a summary—it provides a verifiable, traceable record of organizational momentum. The focus on explainability ensures that every AI-generated insight is grounded in reality, fostering trust and accountability in the decision-making process.

@@ -17,6 +17,14 @@ interface ChatMsg {
   response?: ChatResponse;
 }
 
+const getConfidenceLabel = (conf: number) => {
+  const p = conf * 100;
+  if (p >= 85) return "High confidence";
+  if (p >= 60) return "Good match";
+  if (p >= 30) return "Partial relevance";
+  return "Weak / uncertain";
+};
+
 export function ChatWidget() {
   const [isOpen, setIsOpen] = useState(false)
   const [expanded, setExpanded] = useState(false)
@@ -130,6 +138,15 @@ export function ChatWidget() {
                   {msg.text}
                 </div>
               </div>
+              
+              {/* Confidence Badge */}
+              {msg.role === "ai" && msg.response && msg.response.confidence > 0 && (
+                <div className="flex justify-start pl-2">
+                  <Badge variant="outline" className={`text-[8px] h-3.5 px-1.5 font-bold ${msg.response.confidence >= 0.85 ? "text-green-600 border-green-200 bg-green-50" : msg.response.confidence >= 0.6 ? "text-primary border-primary/20 bg-primary/5" : "text-amber-600 border-amber-200 bg-amber-50"}`}>
+                    {Math.round(msg.response.confidence * 100)}% - {getConfidenceLabel(msg.response.confidence)}
+                  </Badge>
+                </div>
+              )}
               
               {/* Sources Accordion */}
               {msg.role === "ai" && msg.response && msg.response.sources.length > 0 && (

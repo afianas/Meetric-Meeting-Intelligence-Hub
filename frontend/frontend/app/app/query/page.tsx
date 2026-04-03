@@ -11,11 +11,25 @@ import { chat, ChatResponse } from "@/lib/api"
 import { useMutation } from "@tanstack/react-query"
 
 const groupSourcesByMeeting = (sources: any[]) => {
-  return sources.reduce((acc: Record<string, any[]>, src) => {
-    if (!acc[src.meeting_id]) acc[src.meeting_id] = [];
-    acc[src.meeting_id].push(src);
+  return sources.reduce((acc: Record<string, { title: string, items: any[] }>, src) => {
+    const mId = src.meeting_id;
+    if (!acc[mId]) {
+      acc[mId] = {
+        title: src.meeting_title || `Meeting ${mId.slice(-6).toUpperCase()}`,
+        items: []
+      };
+    }
+    acc[mId].items.push(src);
     return acc;
   }, {});
+};
+
+const getConfidenceLabel = (conf: number) => {
+  const p = conf * 100;
+  if (p >= 85) return "High confidence";
+  if (p >= 60) return "Good match";
+  if (p >= 30) return "Partial relevance";
+  return "Weak / uncertain";
 };
 
 const suggestedQueries = [
@@ -35,11 +49,21 @@ export default function QueryEnginePage() {
   const [query, setQuery] = useState("")
   const [isThinking, setIsThinking] = useState(false)
   const [messages, setMessages] = useState<Message[]>([])
+  const [expandedMessages, setExpandedMessages] = useState<Set<number>>(new Set())
   const bottomRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" })
   }, [messages, isThinking])
+
+  const toggleSources = (index: number) => {
+    setExpandedMessages(prev => {
+      const next = new Set(prev)
+      if (next.has(index)) next.delete(index)
+      else next.add(index)
+      return next
+    })
+  }
 
   const chatMutation = useMutation({
     mutationFn: (q: string) => chat(q),
@@ -110,32 +134,49 @@ export default function QueryEnginePage() {
                       </div>
                       <div className="space-y-3">
                         <div className="rounded-2xl rounded-tl-none bg-muted px-4 py-3 text-sm text-foreground leading-relaxed whitespace-pre-line">{msg.text}</div>
-                        {/* Confidence */}
-                        {msg.response && msg.response.confidence > 0 && (
+                        {/* Analysis Scope & Results */}
+                        {msg.response && (
                           <div className="flex items-center gap-2">
-                            <Badge variant="outline" className="text-xs text-primary">{Math.round(msg.response.confidence * 100)}% confidence</Badge>
+                            {msg.response.meetings_used > 1 && (
+                              <Badge variant="secondary" className="text-[10px] bg-primary/10 text-primary border-none font-bold animate-in fade-in zoom-in duration-500">
+                                Analyzing {msg.response.meetings_used} meetings
+                              </Badge>
+                            )}
                             <span className="text-xs text-muted-foreground">{msg.response.meetings_used} meeting{msg.response.meetings_used !== 1 ? "s" : ""} searched</span>
+                            
+                            {/* View Sources Toggle */}
+                            {msg.response.sources.length > 0 && (
+                              <Button 
+                                variant="ghost" 
+                                size="sm" 
+                                className="h-6 px-2 text-[10px] font-bold text-primary hover:bg-primary/10 transition-all flex items-center gap-1.5 ml-auto"
+                                onClick={() => toggleSources(i)}
+                              >
+                                {expandedMessages.has(i) ? "Hide Evidence" : `Show Evidence (${msg.response.sources.length} segments)`}
+                                <MessageSquare className={`h-2.5 w-2.5 transition-transform duration-300 ${expandedMessages.has(i) ? "rotate-180" : ""}`} />
+                              </Button>
+                            )}
                           </div>
                         )}
-                        {/* Sources */}
-                        {msg.response && msg.response.sources.length > 0 && (
-                          <div className="space-y-4 mt-6 pt-6 border-t border-border/50">
+                        {/* Sources - Expanded View */}
+                        {msg.response && msg.response.sources.length > 0 && expandedMessages.has(i) && (
+                          <div className="space-y-4 mt-6 pt-6 border-t border-border/50 animate-in slide-in-from-top-4 duration-500">
                             <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground/80">
                               <MessageSquare className="h-3 w-3 text-primary" />
                               Sources & Traceable Evidence
                             </div>
                             <div className="space-y-6">
-                              {Object.entries(groupSourcesByMeeting(msg.response.sources)).map(([mId, mSources]: [string, any]) => (
+                              {Object.entries(groupSourcesByMeeting(msg.response.sources)).map(([mId, mData]: [string, any]) => (
                                 <div key={mId} className="space-y-3">
                                   <div className="flex items-center gap-2">
                                     <div className="h-px flex-1 bg-gradient-to-r from-transparent via-border to-transparent" />
                                     <span className="text-[10px] font-mono font-medium text-muted-foreground bg-muted/50 px-2 py-0.5 rounded-full border border-border/50">
-                                      Meeting Ref: {mId.slice(-6).toUpperCase()}
+                                      {mData.title}
                                     </span>
                                     <div className="h-px flex-1 bg-gradient-to-r from-border via-border to-transparent" />
                                   </div>
                                   <div className="grid grid-cols-1 gap-3">
-                                    {mSources.map((src: any, si: number) => (
+                                    {mData.items.map((src: any, si: number) => (
                                       <Link 
                                         key={`${mId}-${si}`} 
                                         href={`/app/transcripts?id=${src.meeting_id}&segment=${src.segment_id}`}
