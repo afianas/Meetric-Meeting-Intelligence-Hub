@@ -56,7 +56,7 @@ export default function ActionTrackerPage() {
   const handleToggle = (item: MappedActionItem) => {
     const key = `${item.meetingId}-${item.id}`
     setToggling(key)
-    const newStatus = !item.completed ? "done" : "pending"
+    const newStatus = !item.completed ? "completed" : "pending"
     toggleMutation.mutate({ meetingId: item.meetingId, taskId: item.id, status: newStatus })
   }
 
@@ -130,14 +130,17 @@ export default function ActionTrackerPage() {
           {filtered.map(item => {
             const key = `${item.meetingId}-${item.id}`
             const isToggling = toggling === key
+            // Optimistic check: if toggling, assume the opposite of current state for visual feedback
+            const isVisuallyDone = isToggling ? !item.completed : item.completed
+            
             return (
-              <Card key={key} className={`transition-all hover:shadow-md ${item.completed ? "opacity-60 bg-muted/20" : ""}`}>
+              <Card key={key} className={`transition-all hover:shadow-md ${isVisuallyDone ? "opacity-60 bg-muted/20" : ""}`}>
                 <CardContent className="flex items-center justify-between p-4">
                   <div className="flex items-center gap-4">
-                    <Badge className={item.statusColor}>{item.status}</Badge>
+                    <Badge className={isVisuallyDone ? "bg-green-100 text-green-700" : item.statusColor}>{isVisuallyDone ? "DONE" : item.status}</Badge>
                     <div>
-                      <p className="text-xs text-muted-foreground">{item.meetingName}</p>
-                      <h3 className={`font-medium ${item.completed ? "line-through text-muted-foreground" : "text-foreground"}`}>{item.title}</h3>
+                      <p className={`text-xs ${isVisuallyDone ? "line-through text-muted-foreground/60" : "text-muted-foreground"}`}>{item.meetingName}</p>
+                      <h3 className={`font-medium ${isVisuallyDone ? "line-through text-muted-foreground/80" : "text-foreground"}`}>{item.title}</h3>
                     </div>
                   </div>
                   <div className="flex items-center gap-6">
@@ -146,18 +149,34 @@ export default function ActionTrackerPage() {
                         <AvatarImage src={item.assignee.avatar} /><AvatarFallback>{item.assignee.name[0]}</AvatarFallback>
                       </Avatar>
                       <div>
-                        <p className="text-sm font-medium text-foreground">{item.assignee.name}</p>
-                        <p className="text-xs text-muted-foreground">{item.assignee.role}</p>
+                        <p className={`text-sm font-medium ${isVisuallyDone ? "line-through text-muted-foreground/70" : "text-foreground"}`}>{item.assignee.name}</p>
+                        <p className={`text-xs ${isVisuallyDone ? "line-through text-muted-foreground/50" : "text-muted-foreground"}`}>{item.assignee.role}</p>
                       </div>
                     </div>
                     <div className="text-right">
-                      <p className="text-xs text-muted-foreground">{item.completed ? "COMPLETED" : "DUE DATE"}</p>
-                      <p className={`text-sm font-medium ${item.dueDateColor}`}>{item.dueDate}</p>
+                      <p className={`text-xs ${isVisuallyDone ? "line-through text-muted-foreground/50" : "text-muted-foreground"}`}>{isVisuallyDone ? "COMPLETED" : "DUE DATE"}</p>
+                      <p className={`text-sm font-medium ${isVisuallyDone ? "line-through text-muted-foreground/70" : item.dueDateColor}`}>{item.dueDate}</p>
                     </div>
-                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleToggle(item)} disabled={isToggling}>
-                      {isToggling ? <Loader2 className="h-5 w-5 animate-spin" /> :
-                        item.completed ? <CheckCircle2 className="h-5 w-5 text-green-600" /> :
-                          <div className="h-5 w-5 rounded-full border-2 border-muted hover:border-primary transition-colors" />}
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      className="h-10 w-10 rounded-full hover:bg-primary/5 transition-all group" 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleToggle(item);
+                      }} 
+                      disabled={isToggling}
+                      title={item.completed ? "Mark as pending" : "Mark as completed"}
+                    >
+                      {isToggling ? (
+                        <div className="relative h-6 w-6 flex items-center justify-center">
+                          <div className="absolute inset-0 rounded-full border-2 border-primary/20" />
+                          <Loader2 className="h-4 w-4 animate-spin text-primary relative z-10" />
+                        </div>
+                      ) : (
+                        item.completed ? <CheckCircle2 className="h-6 w-6 text-green-600 drop-shadow-sm group-hover:scale-110 transition-transform" /> :
+                          <div className="h-6 w-6 rounded-full border-2 border-primary/40 hover:border-primary transition-colors bg-background shadow-inner group-hover:scale-110" />
+                      )}
                     </Button>
                   </div>
                 </CardContent>

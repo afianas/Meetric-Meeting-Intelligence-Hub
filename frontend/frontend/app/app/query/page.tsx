@@ -6,10 +6,20 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { FileText, MessageSquare, Send, Sparkles, Lightbulb } from "lucide-react"
+import Link from "next/link"
 import { chat, ChatResponse } from "@/lib/api"
 import { useMutation } from "@tanstack/react-query"
 
+const groupSourcesByMeeting = (sources: any[]) => {
+  return sources.reduce((acc: Record<string, any[]>, src) => {
+    if (!acc[src.meeting_id]) acc[src.meeting_id] = [];
+    acc[src.meeting_id].push(src);
+    return acc;
+  }, {});
+};
+
 const suggestedQueries = [
+// ... (rest of imports and constants)
   { title: "What decisions were made?", icon: Lightbulb },
   { title: "Who is responsible for action items?", icon: FileText },
   { title: "What were the key concerns raised?", icon: MessageSquare },
@@ -109,18 +119,58 @@ export default function QueryEnginePage() {
                         )}
                         {/* Sources */}
                         {msg.response && msg.response.sources.length > 0 && (
-                          <div className="space-y-2">
-                            <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Sources</p>
-                            {msg.response.sources.slice(0, 3).map((src, si) => (
-                              <div key={si} className="rounded-lg border border-border bg-card p-3">
-                                <div className="flex items-center gap-2 mb-1">
-                                  <span className="text-xs font-semibold text-primary">{src.speaker}</span>
-                                  {src.role && <span className="text-xs text-muted-foreground">({src.role})</span>}
-                                  <Badge variant="outline" className="text-[10px] ml-auto">{src.emotion}</Badge>
+                          <div className="space-y-4 mt-6 pt-6 border-t border-border/50">
+                            <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground/80">
+                              <MessageSquare className="h-3 w-3 text-primary" />
+                              Sources & Traceable Evidence
+                            </div>
+                            <div className="space-y-6">
+                              {Object.entries(groupSourcesByMeeting(msg.response.sources)).map(([mId, mSources]: [string, any]) => (
+                                <div key={mId} className="space-y-3">
+                                  <div className="flex items-center gap-2">
+                                    <div className="h-px flex-1 bg-gradient-to-r from-transparent via-border to-transparent" />
+                                    <span className="text-[10px] font-mono font-medium text-muted-foreground bg-muted/50 px-2 py-0.5 rounded-full border border-border/50">
+                                      Meeting Ref: {mId.slice(-6).toUpperCase()}
+                                    </span>
+                                    <div className="h-px flex-1 bg-gradient-to-r from-border via-border to-transparent" />
+                                  </div>
+                                  <div className="grid grid-cols-1 gap-3">
+                                    {mSources.map((src: any, si: number) => (
+                                      <Link 
+                                        key={`${mId}-${si}`} 
+                                        href={`/app/transcripts?id=${src.meeting_id}&segment=${src.segment_id}`}
+                                        className="group block"
+                                      >
+                                        <div className="rounded-xl border border-border bg-card p-4 transition-all duration-300 hover:border-primary/50 hover:shadow-xl hover:-translate-y-1 cursor-pointer ring-primary/0 hover:ring-4 ring-primary/5">
+                                          <div className="flex items-center justify-between mb-2.5">
+                                            <div className="flex items-center gap-2">
+                                              <div className="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center text-[10px] font-bold text-primary">
+                                                {src.speaker?.[0]?.toUpperCase() || "?"}
+                                              </div>
+                                              <span className="text-xs font-bold text-foreground group-hover:text-primary transition-colors">{src.speaker || "Unknown"}</span>
+                                              {src.role && <span className="text-[10px] text-muted-foreground font-medium italic opacity-70">({src.role})</span>}
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                              {src.emotion && (
+                                                <Badge variant="outline" className="text-[9px] h-4.5 px-2 bg-primary/5 text-primary border-primary/20 font-semibold group-hover:bg-primary/10 transition-colors capitalize">
+                                                  {src.emotion}
+                                                </Badge>
+                                              )}
+                                              <div className="text-[10px] text-primary font-bold opacity-0 group-hover:opacity-100 translate-x-2 group-hover:translate-x-0 transition-all duration-300 flex items-center gap-1">
+                                                Jump to discussion <Send className="h-2.5 w-2.5 rotate-45" />
+                                              </div>
+                                            </div>
+                                          </div>
+                                          <p className="text-xs text-muted-foreground line-clamp-3 leading-relaxed italic group-hover:text-foreground transition-colors overflow-hidden relative">
+                                            "{src.text}"
+                                          </p>
+                                        </div>
+                                      </Link>
+                                    ))}
+                                  </div>
                                 </div>
-                                <p className="text-xs text-muted-foreground italic">"{src.text}"</p>
-                              </div>
-                            ))}
+                              ))}
+                            </div>
                           </div>
                         )}
                       </div>

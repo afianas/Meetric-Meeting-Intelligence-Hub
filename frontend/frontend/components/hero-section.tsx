@@ -28,19 +28,15 @@ export function HeroSection() {
           </h1>
 
           <p className="mt-8 text-xl text-muted-foreground max-w-xl leading-relaxed font-medium">
-            Meetric transforms your voice transcripts into curated <span className="text-foreground italic">editorial intelligence</span>. No noise. Just structure, action, and insight.
+            Meetric transforms your meeting transcripts into curated <span className="text-foreground italic">editorial intelligence</span>. No noise. Just structure, action, and insight.
           </p>
 
           <div className="mt-12 flex flex-wrap items-center gap-6">
             <Link href="/app">
               <Button size="lg" className="px-10 h-14 rounded-full text-base font-bold uppercase tracking-widest bg-primary hover:scale-105 transition-all shadow-[0_20px_50px_rgba(59,130,246,0.3)] border-b-4 border-blue-700 active:border-b-0 active:translate-y-1">
-                Start Free Trial
+                Enter Workspace
               </Button>
             </Link>
-            <Button variant="outline" size="lg" className="gap-3 h-14 px-8 rounded-full text-base font-bold uppercase tracking-widest border-2 hover:bg-muted transition-colors">
-              <Play className="h-5 w-5 fill-current" />
-              Watch Demo
-            </Button>
           </div>
         </div>
       </div>

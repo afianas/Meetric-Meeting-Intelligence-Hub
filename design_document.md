@@ -16,7 +16,14 @@ The system is partitioned into three functional layers to ensure separation of c
 - **Intelligence Layer:** Groq-hosted Llama 3.3 for reasoning, FAISS for vector indexing, and BGE for high-fidelity embeddings.
 - **Execution Layer:** A task management system backed by MongoDB for state persistence and metadata tracking.
 - **Explainability Layer:** A custom mapping engine that correlates LLM outputs with source segments for auditability.
+- **Source Traceability Layer:** A navigation architecture that enables segment-level deep linking from AI responses back to transcript dialogue. It incorporates smooth-scroll positioning, context-aware highlighting (±2 segments), and visual feedback (pulse animations) to ground AI reasoning in verifiable conversation moments.
 - **Data Organization Layer:** A mutation-driven UI framework utilizing TanStack Query, enabling dynamic client-side sorting and grouping strategies with real-time synchronization during meeting modifications/deletions.
+
+## 4. Action Tracking Logic
+The system implements a high-fidelity task management strategy to ensure operational accuracy:
+- **Pending vs. Completed Separation:** Tasks are strictly filtered across the data layer. A task is considered "Pending" only if its status is not 'completed' or 'done' and its boolean `completed` field is false.
+- **Aggregation Strategy:** Dashboard metrics aggregate pending tasks globally while simultaneously tracking the subset of meetings that contain active work.
+- **Real-time Synchronization:** Utilizes TanStack Query's cache invalidation (`queryClient.invalidateQueries(['meetings'])`) to provide instantaneous updates across the dashboard and meeting history whenever a task state is mutated.
 
 ### Tech Stack
 - **Backend:** FastAPI (Python)

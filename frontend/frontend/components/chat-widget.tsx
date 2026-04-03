@@ -2,19 +2,26 @@
 
 import { useState, useRef, useEffect } from "react"
 import { usePathname, useSearchParams } from "next/navigation"
-import { MessageSquare, X, Send, Sparkles, Loader2, Maximize2, Minimize2 } from "lucide-react"
+import { MessageSquare, X, Send, Sparkles, Loader2, Maximize2, Minimize2, ChevronDown, ChevronUp } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
 import { useMutation } from "@tanstack/react-query"
-import { chat } from "@/lib/api"
+import { chat, ChatResponse } from "@/lib/api"
+import Link from "next/link"
 
-interface ChatMsg { role: "user" | "ai"; text: string }
+interface ChatMsg { 
+  role: "user" | "ai"; 
+  text: string;
+  response?: ChatResponse;
+}
 
 export function ChatWidget() {
   const [isOpen, setIsOpen] = useState(false)
   const [expanded, setExpanded] = useState(false)
   const [messages, setMessages] = useState<ChatMsg[]>([])
+  const [expandedSources, setExpandedSources] = useState<number[]>([])
   const [query, setQuery] = useState("")
   const [isThinking, setIsThinking] = useState(false)
   
@@ -38,6 +45,12 @@ export function ChatWidget() {
     setMessages([])
   }, [meetingId])
 
+  const toggleSources = (index: number) => {
+    setExpandedSources(prev => 
+      prev.includes(index) ? prev.filter(i => i !== index) : [...prev, index]
+    )
+  }
+
   const chatMutation = useMutation({
     mutationFn: (q: string) => chat(q, meetingId || undefined),
     onSuccess: (res) => {
@@ -45,7 +58,7 @@ export function ChatWidget() {
       if (res.confidence < 0.1 || !res.answer || res.answer.trim() === "") {
         finalAnswer = "No relevant information found in the knowledge base.";
       }
-      setMessages(prev => [...prev, { role: "ai", text: finalAnswer }])
+      setMessages(prev => [...prev, { role: "ai", text: finalAnswer, response: res }])
     },
     onError: () => {
       setMessages(prev => [...prev, { role: "ai", text: "Could not reach the backend. Please try again." }])
@@ -107,14 +120,73 @@ export function ChatWidget() {
              </div>
           )}
           {messages.map((msg, i) => (
-            <div key={i} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
-              <div className={`rounded-xl px-4 py-2 text-sm max-w-[85%] whitespace-pre-line shadow-sm
-                ${msg.role === "user" 
-                  ? "bg-primary text-primary-foreground rounded-br-sm" 
-                  : "bg-background border border-border rounded-bl-sm text-foreground"}`
-              }>
-                {msg.text}
+            <div key={i} className="flex flex-col space-y-2">
+              <div className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
+                <div className={`rounded-xl px-4 py-2 text-sm max-w-[85%] whitespace-pre-line shadow-sm
+                  ${msg.role === "user" 
+                    ? "bg-primary text-primary-foreground rounded-br-sm" 
+                    : "bg-background border border-border rounded-bl-sm text-foreground"}`
+                }>
+                  {msg.text}
+                </div>
               </div>
+              
+              {/* Sources Accordion */}
+              {msg.role === "ai" && msg.response && msg.response.sources.length > 0 && (
+                <div className="flex justify-start pl-2">
+                  <div className="flex flex-col w-[90%]">
+                    <button 
+                      onClick={() => toggleSources(i)}
+                      className="group flex items-center gap-1.5 text-[10px] font-bold text-primary hover:text-primary transition-colors py-1 px-2 rounded-md hover:bg-primary/5 w-fit"
+                    >
+                      <Sparkles className="h-2.5 w-2.5 animate-pulse" />
+                      {expandedSources.includes(i) ? "Hide Evidence" : `View Evidence (${msg.response.sources.length})`}
+                      {expandedSources.includes(i) ? <ChevronUp className="h-2.5 w-2.5" /> : <ChevronDown className="h-2.5 w-2.5" />}
+                    </button>
+                    
+                    {expandedSources.includes(i) && (
+                      <div className="mt-2 space-y-2 animate-in fade-in slide-in-from-top-2 duration-300">
+                        {msg.response.sources.slice(0, 3).map((src, si) => (
+                          <Link 
+                            key={`${i}-${si}`} 
+                            href={`/app/transcripts?id=${src.meeting_id}&segment=${src.segment_id}`}
+                            className="group block"
+                          >
+                            <div className="rounded-lg border border-border bg-background p-2.5 transition-all duration-300 hover:border-primary/50 hover:shadow-md cursor-pointer border-l-4 border-l-primary/10 hover:border-l-primary">
+                              <div className="flex items-center justify-between mb-1">
+                                <div className="flex items-center gap-1.5">
+                                  <div className="h-4 w-4 rounded-full bg-primary/10 flex items-center justify-center text-[7px] font-bold text-primary">
+                                    {src.speaker?.[0]?.toUpperCase() || "?"}
+                                  </div>
+                                  <span className="text-[9px] font-bold text-foreground group-hover:text-primary transition-colors">{src.speaker || "Unknown"}</span>
+                                </div>
+                                {src.emotion && (
+                                  <Badge variant="outline" className="text-[7px] h-3.5 px-1 bg-primary/5 text-primary border-primary/20 capitalize font-medium">
+                                    {src.emotion}
+                                  </Badge>
+                                )}
+                              </div>
+                              <p className="text-[9px] text-muted-foreground line-clamp-2 italic leading-normal group-hover:text-foreground transition-colors transition-opacity duration-300">
+                                "{src.text}"
+                              </p>
+                              <div className="mt-1 flex items-center justify-end">
+                                <span className="text-[8px] font-bold text-primary opacity-0 group-hover:opacity-100 translate-x-1 group-hover:translate-x-0 transition-all duration-300 flex items-center gap-0.5">
+                                  Jump to discussion →
+                                </span>
+                              </div>
+                            </div>
+                          </Link>
+                        ))}
+                        {msg.response.sources.length > 3 && (
+                          <div className="text-[8px] text-center text-muted-foreground italic bg-muted/30 py-1 rounded-md">
+                            + {msg.response.sources.length - 3} more sources in Query Engine
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
           ))}
           {isThinking && (

@@ -47,10 +47,12 @@ export function AppSidebar() {
 
       {/* New Meeting Button */}
       <div className="p-4">
-        <Button className="w-full gap-2 bg-primary hover:bg-primary/90">
-          <Plus className="h-4 w-4" />
-          New Meeting
-        </Button>
+        <Link href="/app/upload">
+          <Button className="w-full gap-2 bg-primary hover:bg-primary/90">
+            <Plus className="h-4 w-4" />
+            New Meeting
+          </Button>
+        </Link>
       </div>
 
       {/* Main Navigation */}

@@ -79,7 +79,10 @@ export default function DashboardPage() {
 
   const mapped: MappedMeeting[] = meetings.map(mapMeeting)
   const totalDecisions = mapped.reduce((s, m) => s + m.totalDecisions, 0)
-  const totalActions = mapped.reduce((s, m) => s + m.totalActionItems, 0)
+  const totalPendingActions = mapped.reduce((s, m) => s + m.pendingActionItems, 0)
+  const totalActionItems = mapped.reduce((s, m) => s + m.totalActionItems, 0)
+  const meetingsWithPending = mapped.filter(m => m.pendingActionItems > 0).length
+  const completedActions = totalActionItems - totalPendingActions;
 
   // Sorting
   const sortedMeetings = [...mapped]
@@ -105,7 +108,7 @@ export default function DashboardPage() {
     { label: "Total Meetings", value: mapped.length.toString(), sublabel: "METRICS", change: "all time", icon: BarChart3 },
     { label: "Decisions", value: totalDecisions.toString(), sublabel: "STRATEGIC", change: "extracted by AI", icon: Lightbulb },
     { label: "Dominant Tone", value: "Agreement", sublabel: "TONE", change: "most common sentiment", icon: MessageSquare },
-    { label: "Action Items", value: totalActions.toString(), sublabel: "TASKS", change: "across all meetings", changeColor: "text-primary", icon: ListTodo },
+    { label: "Pending Actions", value: totalPendingActions.toString(), sublabel: "TASKS", change: `${meetingsWithPending} meetings active`, changeColor: "text-primary", icon: ListTodo },
   ]
 
   if (error) {
@@ -127,7 +130,7 @@ export default function DashboardPage() {
         <p className="mt-1 text-muted-foreground">
           {loading ? "Loading your meeting intelligence..." : mapped.length === 0
             ? "No meetings indexed yet. Upload a transcript to get started."
-            : `${mapped.length} meeting${mapped.length !== 1 ? "s" : ""} indexed — ${totalDecisions} decisions and ${totalActions} action items extracted.`}
+            : `${mapped.length} meeting${mapped.length !== 1 ? "s" : ""} — ${totalDecisions} decisions and ${totalPendingActions} pending action items.`}
         </p>
       </div>
 
@@ -152,15 +155,25 @@ export default function DashboardPage() {
       </div>
 
       {/* Action items CTA */}
-      {!loading && totalActions > 0 && (
-        <Card className="bg-gradient-to-r from-primary to-primary/80 text-primary-foreground">
+      {!loading && mapped.length > 0 && (
+        <Card className={`transition-all ${totalPendingActions === 0 ? "bg-gradient-to-r from-emerald-600 to-teal-700" : "bg-gradient-to-r from-primary to-primary/80"} text-primary-foreground`}>
           <CardContent className="flex items-center justify-between p-6">
             <div>
               <p className="text-sm font-medium uppercase tracking-wider opacity-80">Action Items</p>
-              <p className="mt-2 font-serif text-4xl font-bold">{totalActions} Pending</p>
-              <p className="mt-1 text-sm opacity-80">Across {mapped.length} meetings</p>
+              {totalPendingActions === 0 ? (
+                <p className="mt-2 font-serif text-4xl font-bold">All tasks completed 🎉</p>
+              ) : (
+                <p className="mt-2 font-serif text-4xl font-bold">{totalPendingActions} Pending</p>
+              )}
+              <p className="mt-1 text-sm opacity-80">
+                {totalPendingActions === 0 
+                  ? `You've cleared ${totalActionItems} tasks across ${mapped.length} meetings.` 
+                  : `Across ${meetingsWithPending} of ${mapped.length} meetings`}
+              </p>
             </div>
-            <Button variant="secondary" className="bg-white text-primary hover:bg-white/90" onClick={() => router.push("/app/actions")}>Review Now</Button>
+            <Button variant="secondary" className="bg-white text-primary hover:bg-white/90" onClick={() => router.push("/app/actions")}>
+              {totalPendingActions === 0 ? "View History" : "Review Now"}
+            </Button>
           </CardContent>
         </Card>
       )}

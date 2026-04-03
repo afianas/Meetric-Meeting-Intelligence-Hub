@@ -36,6 +36,7 @@ function TranscriptsContent() {
   const queryClient = useQueryClient()
   const searchParams = useSearchParams()
   const meetingId = searchParams.get("id")
+  const segmentIdParam = searchParams.get("segment")
 
   const { data: meeting, isLoading: loading, error } = useQuery({
     queryKey: ['meeting', meetingId],
@@ -56,21 +57,64 @@ function TranscriptsContent() {
   })
 
   const [activeSegmentId, setActiveSegmentId] = useState<string | null>(null)
+  const [highlightedContextIds, setHighlightedContextIds] = useState<string[]>([])
+  const [isFromAI, setIsFromAI] = useState(false)
   const [downloading, setDownloading] = useState(false)
   const segmentRefs = useRef<Record<string, HTMLDivElement>>({})
 
   const scrollToSegment = (segmentId: string) => {
     setActiveSegmentId(segmentId)
-    segmentRefs.current[segmentId]?.scrollIntoView({ behavior: "smooth", block: "center" })
+    const el = segmentRefs.current[segmentId]
+    if (el) {
+      const yOffset = -120;
+      const y = el.getBoundingClientRect().top + window.pageYOffset + yOffset;
+      window.scrollTo({ top: y, behavior: 'smooth' });
+    }
     setTimeout(() => setActiveSegmentId(null), 3000)
   }
 
+  // Handle URL deep linking
+  useEffect(() => {
+    if (segmentIdParam && meeting && (meeting as BackendMeeting).segments) {
+      const segments = (meeting as BackendMeeting).segments
+      const idx = segments.findIndex(s => s.segment_id === segmentIdParam)
+      if (idx !== -1) {
+        setIsFromAI(true)
+        setActiveSegmentId(segmentIdParam)
+        
+        // Get context (±2 segments)
+        const contextIds = segments
+          .slice(Math.max(0, idx - 2), Math.min(segments.length, idx + 3))
+          .map(s => s.segment_id)
+        setHighlightedContextIds(contextIds)
 
+        // Scroll with a slight delay to ensure layout is ready
+        const timer = setTimeout(() => {
+          const el = segmentRefs.current[segmentIdParam]
+          if (el) {
+            const yOffset = -120;
+            const y = el.getBoundingClientRect().top + window.pageYOffset + yOffset;
+            window.scrollTo({ top: y, behavior: 'smooth' });
+          }
+        }, 500)
 
+        // Fade out highlights after 5s
+        const fadeTimer = setTimeout(() => {
+          setActiveSegmentId(null)
+          setHighlightedContextIds([])
+        }, 5000)
 
+        return () => {
+          clearTimeout(timer)
+          clearTimeout(fadeTimer)
+        }
+      }
+    }
+  }, [segmentIdParam, meeting])
 
   if (!meetingId) return (
     <div className="flex flex-col items-center justify-center py-16 px-4 w-full">
+      {/* ... (keep existing select transcript view) */}
       <div className="text-center max-w-lg mb-8">
         <h1 className="font-serif text-3xl font-semibold text-foreground">Select a Transcript</h1>
         <p className="mt-2 text-muted-foreground">Choose a meeting from the list below to view its full transcript and extract insights.</p>
@@ -144,7 +188,18 @@ function TranscriptsContent() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="relative space-y-6">
+      {/* AI Source Banner */}
+      {isFromAI && (
+        <div className="sticky top-0 z-40 -mt-6 -mx-6 mb-6 bg-primary/10 border-b border-primary/20 px-8 py-2.5 flex items-center justify-between backdrop-blur-md">
+          <div className="flex items-center gap-2">
+            <Sparkles className="h-4 w-4 text-primary animate-pulse" />
+            <span className="text-sm font-medium text-primary">Viewing source from AI response</span>
+          </div>
+          <Button variant="ghost" size="sm" className="h-7 text-xs text-primary hover:bg-primary/20" onClick={() => setIsFromAI(false)}>Dismiss</Button>
+        </div>
+      )}
+
       {/* Breadcrumb */}
       <div className="flex items-center gap-2 text-sm">
         <Link href="/app" className="text-muted-foreground hover:text-foreground flex items-center gap-1">
@@ -177,32 +232,48 @@ function TranscriptsContent() {
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         {/* Transcript segments */}
         <div className="space-y-4 lg:col-span-2">
-          <h2 className="font-serif text-lg font-semibold text-foreground">Transcript Segments</h2>
+          <div className="flex items-center justify-between">
+            <h2 className="font-serif text-lg font-semibold text-foreground">Transcript Segments</h2>
+            {highlightedContextIds.length > 0 && (
+              <Badge variant="outline" className="animate-in fade-in slide-in-from-right-4 duration-500 bg-primary/5 text-primary border-primary/20">
+                Context around this discussion
+              </Badge>
+            )}
+          </div>
+          
           {segments.length === 0 ? (
             <Card><CardContent className="py-8 text-center text-muted-foreground">No segments available for this meeting.</CardContent></Card>
           ) : (
-            segments.map((seg) => (
-              <div
-                key={seg.segment_id}
-                ref={el => { if (el) segmentRefs.current[seg.segment_id] = el }}
-                className={`flex gap-4 rounded-lg p-3 transition-all duration-500 ${activeSegmentId === seg.segment_id ? "bg-primary/10 ring-2 ring-primary/40" : "hover:bg-muted/30"}`}
-              >
-                <Avatar className="h-10 w-10 flex-shrink-0">
-                  <img src={avatarFor(seg.speaker)} alt={seg.speaker} className="rounded-full object-cover" />
-                  <AvatarFallback>{seg.speaker?.[0] || "?"}</AvatarFallback>
-                </Avatar>
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="font-medium text-foreground">{seg.speaker}</span>
-                    {seg.role && seg.role !== "Unknown" && <span className="text-xs text-muted-foreground">({seg.role})</span>}
-                    {seg.emotion && (
-                      <Badge className={`text-[10px] ${emotionBadgeStyle(seg.emotion)}`}>{seg.emotion}</Badge>
-                    )}
+            segments.map((seg) => {
+              const isActive = activeSegmentId === seg.segment_id
+              const isInContext = highlightedContextIds.includes(seg.segment_id)
+              
+              return (
+                <div
+                  key={seg.segment_id}
+                  ref={el => { if (el) segmentRefs.current[seg.segment_id] = el }}
+                  className={`flex gap-4 rounded-lg p-3 transition-all duration-700 
+                    ${isActive ? "bg-primary/15 ring-2 ring-primary/40 animate-source-pulse" : 
+                      isInContext ? "bg-primary/5 border border-primary/10 animate-highlight-fade" : 
+                      "hover:bg-muted/30"}`}
+                >
+                  <Avatar className="h-10 w-10 flex-shrink-0">
+                    <img src={avatarFor(seg.speaker)} alt={seg.speaker} className="rounded-full object-cover" />
+                    <AvatarFallback>{seg.speaker?.[0] || "?"}</AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="font-medium text-foreground">{seg.speaker || "Unknown"}</span>
+                      {seg.role && seg.role !== "Unknown" && <span className="text-xs text-muted-foreground">({seg.role})</span>}
+                      {seg.emotion && (
+                        <Badge className={`text-[10px] ${emotionBadgeStyle(seg.emotion)}`}>{seg.emotion}</Badge>
+                      )}
+                    </div>
+                    <p className="mt-1 text-sm text-muted-foreground leading-relaxed whitespace-pre-line">{seg.text}</p>
                   </div>
-                  <p className="mt-1 text-sm text-muted-foreground leading-relaxed whitespace-pre-line">{seg.text}</p>
                 </div>
-              </div>
-            ))
+              )
+            })
           )}
         </div>
 
@@ -252,7 +323,7 @@ function TranscriptsContent() {
                     )}
                     <div>
                       <p className={`text-sm ${item.completed ? "line-through text-muted-foreground" : "text-foreground"}`}>{item.title}</p>
-                      <p className="text-xs text-primary">{item.assignee.name} • {item.dueDate}</p>
+                      <p className={`text-xs ${item.completed ? "line-through text-muted-foreground/60" : "text-primary"}`}>{item.assignee.name} • {item.dueDate}</p>
                     </div>
                   </button>
                 ))}
@@ -270,9 +341,9 @@ function TranscriptsContent() {
                     <div key={name} className="flex items-center gap-2">
                       <Avatar className="h-7 w-7">
                         <img src={avatarFor(name)} alt={name} className="rounded-full object-cover" />
-                        <AvatarFallback>{name[0]}</AvatarFallback>
+                        <AvatarFallback>{name?.[0] || "?"}</AvatarFallback>
                       </Avatar>
-                      <span className="text-sm text-foreground">{name}</span>
+                      <span className="text-sm text-foreground">{name || "Unknown"}</span>
                     </div>
                   ))}
                 </div>

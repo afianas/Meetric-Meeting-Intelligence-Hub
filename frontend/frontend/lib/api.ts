@@ -51,6 +51,7 @@ export interface MappedMeeting {
   avatars: string[];
   totalDecisions: number;
   totalActionItems: number;
+  pendingActionItems: number;
 }
 
 export interface MappedActionItem {
@@ -118,7 +119,7 @@ function dominantEmotion(segments: BackendSegment[]): string {
 }
 
 function uiStatus(item: BackendActionItem): { label: string; color: string } {
-  const isDone = item.completed || item.status === "completed";
+  const isDone = item.completed || item.status === "completed" || item.status === "done";
   if (isDone) return { label: "DONE", color: "bg-green-100 text-green-700" };
   const s = (item.status || "pending").toLowerCase();
   if (s === "overdue") return { label: "OVERDUE", color: "bg-red-100 text-red-700" };
@@ -141,6 +142,12 @@ export function mapMeeting(m: BackendMeeting): MappedMeeting {
     avatars: speakers.slice(0, 3).map(n => avatarFor(n)),
     totalDecisions: (analysis.decisions || []).length,
     totalActionItems: (analysis.action_items || []).length,
+    pendingActionItems: (analysis.action_items || []).filter(item => {
+      const isDone = item.completed === true || 
+                     item.status === "completed" || 
+                     item.status === "done";
+      return !isDone;
+    }).length,
   };
 }
 
@@ -161,7 +168,7 @@ export function mapActionItem(
     assignee: { name: item.who || "Unknown", role: "Team Member", avatar: avatarFor(item.who || "Unknown") },
     dueDate: item.deadline || "No deadline",
     dueDateColor: label === "OVERDUE" ? "text-red-600" : "text-muted-foreground",
-    completed: item.completed === true || item.status === "completed",
+    completed: item.completed === true || item.status === "completed" || item.status === "done",
   };
 }
 

@@ -124,3 +124,23 @@
     @apply bg-background text-foreground;
   }
 }
+
+@layer utilities {
+  @keyframes source-pulse {
+    0%, 100% { background-color: transparent; }
+    50% { background-color: var(--primary); opacity: 0.15; }
+  }
+  
+  @keyframes highlight-fade-out {
+    0% { background-color: var(--primary); opacity: 0.1; }
+    100% { background-color: transparent; }
+  }
+
+  .animate-source-pulse {
+    animation: source-pulse 2s ease-in-out 3;
+  }
+
+  .animate-highlight-fade {
+    animation: highlight-fade-out 3s ease-out forwards;
+  }
+}
