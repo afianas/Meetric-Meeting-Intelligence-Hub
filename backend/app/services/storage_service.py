@@ -64,22 +64,44 @@ def delete_all_meetings():
     """Delete every document in the meetings collection and clear vector store."""
     if collection is None:
         raise Exception("MongoDB not connected")
-    result = collection.delete_many({})
-    reset_vectors() # sync FAISS
-    return result.deleted_count
+    
+    try:
+        result = collection.delete_many({})
+        from app.services.vector_service import reset_vectors
+        reset_vectors() # sync Pinecone
+        print(f"✅ Deleted all {result.deleted_count} meetings and cleared Pinecone index.")
+        return result.deleted_count
+    except Exception as e:
+        print(f"❌ Error deleting all meetings: {e}")
+        return 0
 
 
 def delete_meeting(meeting_id: str):
     """Delete a single meeting by its ObjectId string. Returns True if deleted."""
     if collection is None:
         raise Exception("MongoDB not connected")
+    
     try:
+        # 1. Delete from MongoDB
         result = collection.delete_one({"_id": ObjectId(meeting_id)})
-        if result.deleted_count > 0:
-            from app.services.vector_service import remove_meeting_vectors
-            remove_meeting_vectors(meeting_id)
-        return result.deleted_count > 0
-    except Exception:
+        db_success = result.deleted_count > 0
+        
+        if not db_success:
+            print(f"⚠️ Meeting {meeting_id} not found in MongoDB.")
+            # We still attempt Pinecone cleanup to ensure no ghost data
+        
+        # 2. Delete from Pinecone
+        from app.services.vector_service import remove_meeting_vectors
+        pinecone_success = remove_meeting_vectors(meeting_id)
+        
+        if db_success and pinecone_success:
+            print(f"✅ Deleted meeting {meeting_id} from DB and Pinecone.")
+        elif not pinecone_success:
+            print(f"❌ Failed to delete vectors for {meeting_id} from Pinecone (potential ghost results).")
+        
+        return db_success and pinecone_success
+    except Exception as e:
+        print(f"❌ Error deleting meeting {meeting_id}: {e}")
         return False
 
 

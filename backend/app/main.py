@@ -1,12 +1,22 @@
+import os
+import sys
+import logging
+import certifi
+from dotenv import load_dotenv
+
+# 🚀 1. Centralized Environment & Logging
+load_dotenv()
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s"
+)
+logger = logging.getLogger("app.main")
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.routes import upload
-from app.routes import download
-from app.routes import meetings
-from app.routes import search
-from app.routes import chat
-from app.routes import analytics
-from app.routes import tasks
+from app.routes import upload, download, meetings, search, chat, analytics, tasks
+
+app = FastAPI()
 
 app = FastAPI()
 
@@ -27,25 +37,29 @@ app.include_router(analytics.router)
 app.include_router(tasks.router)
 
 from app.services.storage_service import collection
-from app.services.vector_service import add_vector, index, id_map
+from app.services.vector_service import index
 
 last_load_error = None
 
 @app.on_event("startup")
-def load_all_vectors():
-    print("Loading existing vectors from MongoDB to FAISS RAM index...")
-    if collection is None:
-        print("❌ MongoDB collection not found. Skipping vector load.")
-        return
-    count = 0
+def verify_connections():
+    logger.info("Verifying service connections...")
+    
+    # Verify Pinecone
+    if index is None:
+        logger.error("❌ CRITICAL: Pinecone initialization failed. Check PINECONE_API_KEY and PINECONE_INDEX_NAME.")
+        sys.exit(1)
+    
     try:
-        all_meetings = list(collection.find({}, {"_id": 1, "segments": 1}))
-        for meeting in all_meetings:
-            m_id = str(meeting["_id"])
-            for seg in meeting.get("segments", []):
-                if "embedding" in seg and "segment_id" in seg:
-                    add_vector(seg["embedding"], seg["segment_id"], m_id)
-                    count += 1
-        print(f"✅ Successfully loaded {count} vectors into FAISS.")
+        stats = index.describe_index_stats()
+        logger.info(f"✅ Connected to Pinecone. Index stats: {stats}")
     except Exception as e:
-        print(f"❌ Error loading vectors on startup: {e}")
+        logger.error(f"❌ CRITICAL: Could not connect to Pinecone index: {e}")
+        sys.exit(1)
+
+    # Verify MongoDB
+    if collection is None:
+        logger.error("❌ CRITICAL: MongoDB collection not found.")
+        sys.exit(1)
+    
+    logger.info("✅ All systems ready.")

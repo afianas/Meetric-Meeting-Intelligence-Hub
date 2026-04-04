@@ -54,57 +54,6 @@ The system is designed for **Traceability**. Unlike standard large language mode
 
 ---
 
-## 4. System Architecture
-
-Meetric is architected for **Low Latency** and **Data Privacy**.
-
-```mermaid
-graph TD
-  A[Next.js Dashboard] --> B[FastAPI Backend]
-  B --> C[(MongoDB)]
-  B --> D[FAISS Vector Index]
-  D --> E[BGE Reranker]
-  E --> F[Llama 3.3-70B via Groq]
-  B --> G[DistilBERT Emotion Model]
-  F --> A
-```
-
-### **Component Walkthrough**
-1. **Ingestion Service**: Parses incoming transcripts, performs segmentation, and runs behavioral analysis via the Emotion Model.
-2. **Persistence Layer**: Stores raw segments and metadata in MongoDB, while indexing vectors in **FAISS** for millisecond-scale retrieval.
-3. **Inference Pipeline**: Orchestrates the reranking and generation logic using high-speed LLM infrastructure.
-
----
-
-## 5. Technical Implementation: The RAG Pipeline
-
-A 7-step process ensures factual accuracy in every response:
-1. **Query Scoping**: Detects if the user is targeting a specific meeting or the entire workspace.
-2. **Candidate Retrieval**: FAISS retrieves the top 100 most similar segments using vector similarity.
-3. **Cross-Encoder Reranking**: Re-scores these 100 segments using `BAAI/bge-reranker-base` to account for complex semantic relationships.
-4. **Diversity Sampling**: Ensures evidence is gathered from multiple relevant meetings rather than just the most verbose one.
-5. **Context Assembly**: The most relevant segments are formatted into a prompt with unique segment IDs.
-6. **Strict Generation**: The LLM is instructed to answer only based on the provided context with mandatory citations.
-7. **Metadata Mapping**: Citations are linked back to the original database records for frontend interaction.
-
----
-
-## 6. Technical Rationale
-
-- **FAISS vs. Cloud Vector DBs**: Local FAISS indexing was chosen to minimize network latency and ensure that workspace data remains within the local infrastructure.
-- **Cross-Encoder vs. Bi-Encoder**: While Bi-Encoders are fast for initial search, Cross-Encoders provide superior accuracy by analyzing the query and target text together, which is critical for legal or project-critical dialogue.
-- **FastAPI / Next.js**: The stack was chosen for its asynchronous capabilities (FastAPI) and superior state management (TanStack Query/Next.js) to provide a zero-latency user experience.
-
----
-
-## 7. Design & Interaction
-The interface follows a **Minimalist Analytical** design:
-- **Glassmorphic Depth**: Layers of information are separated using subtle transparency and blur effects for visual hierarchy.
-- **Synchronized State**: Filter selections (Speakers, Meetings, Dates) update all visualizations across the dashboard simultaneously without page reloads.
-- **Editorial Legibility**: Typography is optimized for long-form reading, with clear distinctions between transcript text and analytical data.
-
----
-
 ## Tech Stack
 
 Listing the core technologies used to build the Meetric Intelligence Hub:
@@ -242,3 +191,4 @@ frontend/
 - **Multi-Modal Diarization**: Native audio/video processing with high-accuracy speaker labeling via Whisper v3.
 - **Enterprise Integrations**: Two-way synchronization with **Jira, Slack, and Linear** for automated task and intelligence distribution.
 - **Relational Intelligence**: Transitioning to a **Graph RAG (Neo4j)** architecture to map complex relationships across months of organizational dialogue.
+

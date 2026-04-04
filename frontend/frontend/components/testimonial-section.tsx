@@ -42,11 +42,11 @@ export function TestimonialSection() {
           {testimonials.map((testimonial, index) => (
             <div 
               key={index} 
-              className="group relative p-10 rounded-[2.5rem] bg-background border border-white/10 hover:border-primary/20 transition-all hover:translate-y-[-8px] shadow-2xl shadow-black/5"
+              className="group relative p-10 rounded-[2.5rem] bg-background border border-white/10 hover:border-primary/20 transition-all hover:translate-y-[-8px] shadow-2xl shadow-black/5 flex flex-col h-full"
             >
               <Quote className="h-12 w-12 text-primary/5 absolute top-8 right-8 group-hover:text-primary/10 transition-colors" />
               
-              <p className="relative z-10 text-lg leading-relaxed italic text-foreground font-medium mb-10">
+              <p className="relative z-10 text-lg leading-relaxed italic text-foreground font-medium mb-10 flex-grow">
                 &quot;{testimonial.quote}&quot;
               </p>
               
@@ -54,9 +54,9 @@ export function TestimonialSection() {
                 <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center border border-primary/20">
                   <span className="text-xs font-bold text-primary">{testimonial.initials}</span>
                 </div>
-                <div>
+                <div className="flex flex-wrap items-baseline gap-x-3">
                   <p className="text-sm font-bold text-foreground tracking-tight">{testimonial.author}</p>
-                  <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mt-0.5">
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
                     {testimonial.role} • {testimonial.company}
                   </p>
                 </div>

@@ -33,42 +33,54 @@ def search_meetings(query: str):
 
 
 @router.get("/semantic-search")
-def semantic_search(query: str, top_k: int = 3):
-    meetings = get_all_meetings()
+def semantic_search(query: str, top_k: int = 5):
+    """
+    Semantic search across meetings using Pinecone.
+    Retrieves the most relevant segments and returns their parent meetings.
+    """
+    try:
+        from app.services.embedding_service import get_embedding
+        from app.services.vector_service import search_vector
+        from app.services.storage_service import collection
+        from bson import ObjectId
+        import logging
 
-    query_embedding = np.array(get_embedding(query))
+        query_embedding = get_embedding(query)
+        
+        # Step 1: Query Pinecone for top segments (high recall)
+        matches = search_vector(query_embedding, top_k=top_k * 5)
+        
+        if not matches:
+            return {"query": query, "results": []}
 
-    results = []
+        # Step 2: Extract unique meeting IDs and their best scores
+        seen_meeting_ids = set()
+        results = []
+        
+        for match in matches:
+            m_id = match["metadata"].get("meeting_id")
+            if not m_id or m_id in seen_meeting_ids:
+                continue
+            
+            seen_meeting_ids.add(m_id)
+            meeting = collection.find_one({"_id": ObjectId(m_id)})
+            
+            if meeting:
+                results.append({
+                    "_id": str(meeting["_id"]),
+                    "analysis": meeting.get("analysis", {}),
+                    "_score": round(float(match["score"]), 3),
+                    "match_reason": f"Highly relevant segment found: \"{match['metadata'].get('text', '')[:120]}...\""
+                })
+            
+            if len(results) >= top_k:
+                break
 
-    for meeting in meetings:
-        emb = meeting.get("embedding")
-
-        # 🚫 Skip if no embedding
-        if not emb:
-            continue
-
-        emb = np.array(emb)
-
-        # 🧮 Cosine similarity
-        similarity = np.dot(query_embedding, emb) / (
-            np.linalg.norm(query_embedding) * np.linalg.norm(emb)
-        )
-
-        # ✅ Clean result object (BEST PRACTICE)
-        result_item = {
-            "_id": str(meeting["_id"]),
-            "analysis": meeting.get("analysis", {}),
-            "_score": round(float(similarity), 3),
-            "match_reason": "Matched based on semantic similarity"
+        return {
+            "query": query,
+            "top_k": top_k,
+            "results": results
         }
-
-        results.append(result_item)
-
-    # 🔽 Sort results
-    results.sort(key=lambda x: x["_score"], reverse=True)
-
-    return {
-        "query": query,
-        "top_k": top_k,
-        "results": results[:top_k]
-    }
+    except Exception as e:
+        logging.getLogger("app.search").error(f"Semantic search failed: {e}")
+        return {"query": query, "results": [], "error": str(e)}
