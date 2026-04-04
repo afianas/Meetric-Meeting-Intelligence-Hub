@@ -56,7 +56,7 @@ def chat(query: str, meeting_id: str = None):
         mode = classify_query(query) if not meeting_id else "focused"
         
         # Adaptive retrieval depth
-        top_k = 30 if mode != "focused" else 15
+        top_k = 100 if mode != "focused" else 15
         
         # Step 2: Embed Query
         query_embedding = get_embedding(query)

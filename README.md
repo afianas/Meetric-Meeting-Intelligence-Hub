@@ -9,7 +9,7 @@
 
 ---
 
-## Project Title
+## Project Objective
 **Meetric Intelligence Hub: Turn Hours Of Dialogue Into Minutes Of Clarity**
 
 ---
@@ -22,86 +22,104 @@ Meetings generate massive amounts of unstructured dialogue. Critical decisions a
 ## The Solution
 **Meetric Intelligence Hub** is a technical solution for converting dialogue into structured insights. By treating every transcript segment as a discrete data point, the system enables precise retrieval and automated intelligence extraction.
 
-### **Core Philosophy / Approach: Grounded Retrieval**
-The system is designed for **Traceability**. Unlike standard large language model (LLM) interfaces that may hallucinate summaries, Meetric ensures that every answer is grounded in specific transcript segments. Users can verify any AI claim by clicking a citation that deep-links directly to the source text.
+### Core Philosophy / Approach: Grounded Retrieval
+The system is architected for traceability. Unlike standard LLM interfaces that may hallucinate summaries, Meetric ensures every answer is grounded in specific transcript segments. Users can verify any AI claim via citations that deep-link directly to the source text within the original transcript.
 
-### **🚀 Automated Intelligence Extraction**
-- **Decision Capture**: Identifies strategic agreements via **Llama-3.3-70B** JSON-formatted extraction focused on consensus nodes.
-- **Action Tracker**: Maps tasks to owners and deadlines using LLM-extracted structured objects with **MongoDB** persistence.
-- **Formatted Export**: Dynamic report generation across **CSV and PDF** formats based on real-time extraction data.
+### Automated Intelligence Extraction
+- **Decision Capture**: Identifies strategic agreements via Llama-3.3-70B JSON-formatted extraction focused on consensus nodes.
+- **Action Tracker**: Maps tasks to owners and deadlines using LLM-extracted structured objects with MongoDB persistence.
+- **Formatted Export**: Dynamic report generation across CSV and PDF formats based on real-time extraction data.
 
-### **📊 Speaker Intelligence & Analytics**
-- **Behavioral Radar**: Aggregates speaker behaviors using **DistilBERT**-based emotion classification across dialogue segments.
-- **Synchronized Timeline**: Plotted with **Recharts** to visualize chronological emotional shifts, linked directly to transcript nodes.
+### Speaker Intelligence & Analytics
+- **Behavioral Radar**: Aggregates speaker behaviors using DistilBERT-based emotion classification across dialogue segments.
+- **Synchronized Timeline**: Plotted with Recharts to visualize chronological emotional shifts, linked directly to transcript nodes.
 - **Speaker Profiling**: Normalized behavioral aggregation across multiple meetings to identify communication trends over time.
-- **Sentiment Insights**: Rule-based one-line summary generation based on dominant emotion spikes throughout the session.
 
-### **🧠 Advanced RAG Chatbot & UI Widget**
-- **Scoped Search**: Metadata filtering (meeting-id) on the **FAISS index** to restrict retrieval results to a single transcript.
-- **Global Search**: **Diversity-Aware Sampling** algorithm used to gather evidence from multiple meetings in the workspace.
-- **Persistent Access**: A dedicated **Glassmorphic React Component** widget used for context-aware Q&A across the platform.
-- **Evidence Documentation**: Source mapping using segment-id deep-links for **100% provenance verification**.
-
-### **⚙️ Workspace Management**
-- **Dynamic Grouping**: JavaScript-based grouping (Date/Project) on the frontend for organized archive navigation.
-- **Multi-Format Ingestion**: Custom parsers for **WebVTT (.vtt)** and plain text (.txt) file structures.
-- **Task Lifecycle**: **React Query** mutation logic used to sync task completion status between the UI and database.
-- **Global Reset**: CRUD operations in MongoDB combined with **FAISS index resets** for environment cleanup.
-
-### **🛡️ Contextual Validation**
-- **Deep-Linking**: Index-based transcript navigation logic providing (±2) surrounding context segments.
-- **Visual Pulse**: CSS-animated "pulse" triggered by citation navigation to guide the user's eye to target evidence.
+### RAG Query Engine
+- **Managed Vector Search**: Metadata-based filtering on the Pinecone index to enable precise scoped queries or global workspace searches.
+- **Global Retrieval**: Diversity-aware sampling algorithm gathers evidence from multiple meetings regardless of transcript length.
+- **Persistent Access**: A dedicated glassmorphic React component for context-aware Q&A across the platform.
+- **Evidence Documentation**: Source mapping using segment-id deep-links for 100% provenance verification.
 
 ---
 
-## 4. System Architecture
+## System Architecture
 
-Meetric is architected for **Low Latency** and **Data Privacy**.
+Meetric is architected for low latency, persistence, and data reliability. The system follows a decoupled architecture where metadata is stored in a document database (MongoDB) and semantic embeddings are managed in a high-performance vector store (Pinecone).
 
 ```mermaid
 graph TD
   A[Next.js Dashboard] --> B[FastAPI Backend]
   B --> C[(MongoDB)]
-  B --> D[FAISS Vector Index]
+  B --> D[(Pinecone Vector DB)]
   D --> E[BGE Reranker]
   E --> F[Llama 3.3-70B via Groq]
   B --> G[DistilBERT Emotion Model]
   F --> A
 ```
 
-### **Component Walkthrough**
-1. **Ingestion Service**: Parses incoming transcripts, performs segmentation, and runs behavioral analysis via the Emotion Model.
-2. **Persistence Layer**: Stores raw segments and metadata in MongoDB, while indexing vectors in **FAISS** for millisecond-scale retrieval.
-3. **Inference Pipeline**: Orchestrates the reranking and generation logic using high-speed LLM infrastructure.
+### Component Walkthrough
+1. **Ingestion Service**: Parses raw transcripts (WebVTT/TXT), performs semantic segmentation, and executes behavioral analysis via local transformer models.
+2. **Persistence Layer**: Synchronizes MongoDB (for document metadata) with Pinecone (for vector embeddings), ensuring unified data lifecycle management.
+3. **Inference Pipeline**: Orchestrates multi-stage retrieval, cross-encoder reranking, and Groq-hosted LLM generation for low-latency RAG responses.
 
 ---
 
-## 5. Technical Implementation: The RAG Pipeline
+## Technical Rationale & Tradeoffs
 
-A 7-step process ensures factual accuracy in every response:
-1. **Query Scoping**: Detects if the user is targeting a specific meeting or the entire workspace.
-2. **Candidate Retrieval**: FAISS retrieves the top 100 most similar segments using vector similarity.
-3. **Cross-Encoder Reranking**: Re-scores these 100 segments using `BAAI/bge-reranker-base` to account for complex semantic relationships.
-4. **Diversity Sampling**: Ensures evidence is gathered from multiple relevant meetings rather than just the most verbose one.
-5. **Context Assembly**: The most relevant segments are formatted into a prompt with unique segment IDs.
-6. **Strict Generation**: The LLM is instructed to answer only based on the provided context with mandatory citations.
-7. **Metadata Mapping**: Citations are linked back to the original database records for frontend interaction.
+### Two-Stage Retrieval (Recall vs. Precision)
+The system separates retrieval into two distinct phases using a **Bi-Encoder + Cross-Encoder** architecture.
+- **Rationale**: Standard vector search (Bi-Encoder) is effective for finding relevant candidates quickly but often fails on nuanced semantic boundaries. We use Pinecone for high-recall candidate selection, followed by a BGE Cross-Encoder for high-precision reranking.
+- **Tradeoff**: This approach adds ~200-400ms of latency per query compared to single-stage retrieval, but significantly reduces hallucination by ensuring the LLM only sees the most semantically relevant context.
 
----
+### Decoupled Metadata & Vector Storage
+Meetric utilizes MongoDB for structured persistence and Pinecone for semantic search.
+- **Rationale**: Document databases are superior for managing complex meeting metadata (speaker profiles, analysis results, structured decisions), while specialized vector databases offer superior scaling and native metadata filtering features.
+- **Tradeoff**: Requires manual synchronization logic. Deleting a meeting requires two API calls (DB + Pinecone). We mitigate this with a synchronized deletion service that ensures no "ghost data" remains if one store fails.
 
-## 6. Technical Rationale
-
-- **FAISS vs. Cloud Vector DBs**: Local FAISS indexing was chosen to minimize network latency and ensure that workspace data remains within the local infrastructure.
-- **Cross-Encoder vs. Bi-Encoder**: While Bi-Encoders are fast for initial search, Cross-Encoders provide superior accuracy by analyzing the query and target text together, which is critical for legal or project-critical dialogue.
-- **FastAPI / Next.js**: The stack was chosen for its asynchronous capabilities (FastAPI) and superior state management (TanStack Query/Next.js) to provide a zero-latency user experience.
+### LLM Inference via Groq
+Generative responses and structured extraction are powered by **Llama 3.3-70B** hosted on Groq's LPU infrastructure.
+- **Rationale**: Real-time analytical tools require sub-second generation to remain usable. Groq provides the throughput necessary for processing long contexts without the latency bottlenecks of traditional cloud providers.
+- **Tradeoff**: Dependency on a third-party API. In a production environment, this would be backed by a fallback local inference engine or alternative cloud provider.
 
 ---
 
-## 7. Design & Interaction
-The interface follows a **Minimalist Analytical** design:
-- **Glassmorphic Depth**: Layers of information are separated using subtle transparency and blur effects for visual hierarchy.
-- **Synchronized State**: Filter selections (Speakers, Meetings, Dates) update all visualizations across the dashboard simultaneously without page reloads.
-- **Editorial Legibility**: Typography is optimized for long-form reading, with clear distinctions between transcript text and analytical data.
+## Demo Flow
+
+1. **Ingestion**: Upload a `.vtt` or `.txt` transcript in the **Upload** view. The system performs real-time segmentation and behavioral tagging.
+2. **Analysis Overview**: Navigate to the **Meeting Archive**. View automated summaries, speaker dynamics, and emotional spikes across your meeting history.
+3. **Intelligence Extraction**: Access the **Decisions** and **Actions** views to see structured nodes extracted by the AI pipeline.
+4. **Semantic Querying**: Use the **Query Engine** (Global Search) to ask questions across your entire workspace or a specific meeting. 
+5. **Evidence Verification**: From a chat response, click **Show Evidence** to see the exact transcript segments used for grounding. Clicking a segment deep-links directly to its position in the transcript view.
+6. **Reporting**: Use the **Export** feature to download aggregated intelligence as a CSV or PDF document.
+
+---
+
+## Technical Implementation: The RAG Pipeline
+
+A two-stage process ensures high-precision retrieval and factual groundedness:
+
+### Stage 1: Retrieval (Recall)
+- **Vector Search**: Pinecone retrieves the most semantically similar segments using dense vector similarity.
+- **Metadata Filtering**: Precise scoping using `meeting_id` to filter results for specific meetings or global searches.
+
+### Stage 2: Reranking (Precision)
+- **Cross-Encoder Reranking**: Re-scores candidates using `BAAI/bge-reranker-base` to capture deep semantic nuances between the query and context.
+- **Diversity Sampling**: Ensures evidence is balanced across multiple relevant meetings to prevent bias toward verbose transcripts.
+- **Sigmoid Normalization**: Maps raw reranker logits to a 0–1 probabilistic range for accurate UI confidence scoring.
+
+---
+
+## System Improvements
+
+Recent architectural updates have focused on system reliability and data precision:
+
+- **Persistent Vector Storage**: Migration to Pinecone ensures embeddings are preserved across server restarts without requiring re-indexing.
+- **Accurate Deletion**: Synchronized deletion logic ensures that removing a meeting from MongoDB also purges its corresponding vectors from Pinecone, preventing "ghost results."
+- **Deterministic Vector IDs**: One-to-one mapping between transcript segments and vector IDs ensures idempotency and simplifies retrieval logic.
+- **Deduplication**: Duplicate transcript segments are filtered during ingestion to prevent redundant vectors and noise in retrieval results.
+- **Metadata Filtering**: Native Pinecone filtering enables millisecond-scale scoped searches using meeting identifiers.
+- **Improved Confidence Scoring**: Confidence levels are normalized using a stable sigmoid function based on reranker outputs for consistent user feedback.
 
 ---
 
@@ -110,38 +128,47 @@ The interface follows a **Minimalist Analytical** design:
 Listing the core technologies used to build the Meetric Intelligence Hub:
 
 - **Programming Languages**
-  - **Python 3.10+**: Core backend logic, extraction services, and AI orchestration.
-  - **TypeScript / JavaScript**: Multi-threaded frontend state management and visualization.
+  - **Python 3.10+**: Core backend logic and AI orchestration.
+  - **TypeScript / JavaScript**: Frontend state management and dashboard visualizations.
 
-- **Frameworks**
-  - **FastAPI**: Asynchronous Python API framework for high-concurrency request handling.
-  - **Next.js 14.2 (App Router)**: Modern React framework for the dashboard interface.
-  - **Tailwind CSS**: Utility-first styling for the analytical interface.
-  - **TanStack Query (v5)**: Real-time server-state synchronization.
+- **Frameworks & UI**
+  - **FastAPI**: Asynchronous Python API framework.
+  - **Next.js 14.2 (App Router)**: Modern React framework for the analytical interface.
+  - **Tailwind CSS**: Utility-first styling.
+  - **TanStack Query (v5)**: Server-state synchronization.
 
-- **Databases**
+- **Databases & Storage**
   - **MongoDB**: Persistent document store for transcript metadata and intelligence objects.
-  - **FAISS (Local CPU)**: Vector engine utilizing IVF-Flat indexing for millisecond-scale retrieval.
+  - **Pinecone (Serverless)**: Managed vector database for high-recall semantic retrieval and metadata filtering.
 
-- **APIs or Third-Party Tools**
-  - **Groq API (Llama 3.3-70B)**: High-speed inference for RAG and extraction.
-  - **BGE-Reranker**: Cross-Encoder model for second-stage ranking precision.
-  - **DistilBERT Emotion**: Pre-trained transformer for behavioral mapping.
-  - **Hugging Face Transformers**: Library for local embedding and emotion model local execution.
+- **AI/ML Infrastructure**
+  - **Groq (Llama 3.3-70B)**: High-speed LPUs for low-latency RAG orchestration and structured data extraction.
+  - **Hugging Face Transformers**: Execution engine for local models (`all-MiniLM-L6-v2` for embeddings).
+  - **BAAI BGE-Reranker**: Cross-Encoder model used for precision-stage ranking.
+  - **DistilBERT**: specialized transformer for chronological behavioral mapping.
 
-### **Development & Deployment**
-- **Environment**: Dotenv-based configuration for secure key management (`MONGO_URI`, `GROQ_API_KEY`).
-- **Data Integrity**: **Pydantic v2** for strict request/response validation and schema enforcement.
+- **Development & Validation**
+  - **Pydantic v2**: Strict schema enforcement for backend data models.
+  - **TanStack Query (v5)**: Strategic caching and synchronization of server state.
+  - **Radix UI / Lucide**: Accessible, high-precision component primitives.
+  - **Framer Motion**: Choreographed micro-animations for dashboard state transitions.
+
+---
+
+## Future Roadmap
+
+- **Multi-Modal Diarization**: Native processing of audio/video files with automated Whisper-based transcription and speaker labeling.
+- **Relational Intelligence**: Transitioning from flat vector retrieval to **Graph RAG (Neo4j)** to map long-term organizational relationships and project dependencies.
+- **Enterprise Integrations**: Bi-directional synchronization with project management tools (**Jira, GitHub, Linear**) for automated task distribution.
+- **Proactive Intelligence**: Automated email briefings and Slack updates triggered by meeting consensus nodes or high-sentiment shifts.
 
 ---
 
 ## Setup Instructions
 
-Provide the step-by-step commands to install dependencies and run the project locally.
+### 1. Install Dependencies
 
-### **1. Install Dependencies**
-
-**Backend Installation:**
+**Backend:**
 ```bash
 cd backend
 python -m venv venv
@@ -149,96 +176,62 @@ source venv/bin/activate  # Windows: .\venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
-**Frontend Installation:**
+**Frontend:**
 ```bash
 cd frontend/frontend
 npm install
 ```
 
-### **2. Setup Environment**
+### 2. Pinecone Setup
+Create a Pinecone index with the following configuration:
+- **Dimension**: 384
+- **Metric**: cosine
+- **Vector type**: dense
 
+### 3. Environment Configuration
 Configure your `.env` file in the `backend/` directory:
 ```env
 MONGO_URI=your_mongodb_connection_string
 GROQ_API_KEY=your_groq_api_key
+PINECONE_API_KEY=your_pinecone_api_key
+PINECONE_INDEX_NAME=your_pinecone_index_name
 ```
 
-### **3. Run the Project Locally**
+### 4. Run Locally
 
 **Start Backend Server:**
 ```bash
-# In backend directory
 uvicorn app.main:app --reload
 ```
 
 **Start Frontend Application:**
 ```bash
-# In frontend/frontend directory
 npm run dev
 ```
 
 ---
 
-## Design & Interaction
-The interface follows a **Minimalist Analytical** design:
-- **Glassmorphic Depth**: Layers of information are separated using subtle transparency and blur effects for visual hierarchy.
-- **Synchronized State**: Filter selections (Speakers, Meetings, Dates) update all visualizations across the dashboard simultaneously without page reloads.
-- **Editorial Legibility**: Typography is optimized for long-form reading, with clear distinctions between transcript text and analytical data.
-
----
-
 ## API Documentation
-Listing all backend endpoints available for workspace orchestration and intelligence retrieval:
 
-### **Ingestion & Data Lifecycle**
-- `POST /upload`: Multipart-form upload for `.vtt` and `.txt` transcripts. Initiates automated extraction and behavioral analysis.
-- `GET /meetings`: Retrieves the complete archive of meeting metadata and summary analytics.
-- `DELETE /meetings/{id}`: Permanently removes a specific meeting, its segments, and its vector indices from the workspace.
-- `DELETE /meetings`: A global "Clear All" action for environment reset.
-
-### **Intelligence & Search**
-- `GET /chat`: Scoped RAG Q&A with clickable citations and diversity-aware global retrieval.
-- `GET /search`: Keyword-based analysis search across stored transcripts.
-- `GET /semantic-search`: High-precision vector similarity search using FAISS retrieval.
-
-### **Analytics & Insights**
-- `GET /speaker-analytics`: Behavioral profiling distribution for per-speaker consensus mapping.
-- `GET /sentiment-flow`: Chronological mapping of sentiment-tagged segments for UI timeline plotting.
-- `GET /sentiment-insight`: Automated rule-based dominant behavior summary (e.g., "High Consensus").
-
-### **Tasks & Action Items**
-- `POST /update-task`: Synchronizes the completion status of AI-extracted action items between the AI and Database.
-- `GET /download`: Export capability for Decisions and Action Items in **CSV or PDF** formats.
+- `POST /upload`: Transcript ingestion with automated extraction and behavioral analysis.
+- `GET /meetings`: Archive of meeting metadata and summary analytics.
+- `DELETE /meetings/{id}`: Synchronized removal of meeting data from MongoDB and Pinecone.
+- `GET /chat`: Scoped or global RAG query endpoint with normalized confidence and citations.
+- `GET /semantic-search`: High-precision vector similarity retrieval via Pinecone.
+- `GET /speaker-analytics`: Behavioral profiling distribution for per-speaker mapping.
+- `GET /sentiment-insight`: Automated rule-based dominant behavior summaries.
+- `GET /download`: Export intelligence reports in CSV/PDF formats.
 
 ---
 
 ## App Structure
 ```text
 backend/
-  routes/       # API endpoints (Upload, Chat, Analytics, Tasks)
-  services/     # AI Pipeline logic (RAG, Extraction, Emotion)
-  db/           # Shared database collections
+  routes/       # API endpoints (Upload, Chat, Analytics)
+  services/     # AI Pipeline (RAG, Extraction, Emotion, Pinecone)
+  db/           # Database configuration
 frontend/
   src/
-    components/   # Dashboard widgets (Radar, Timelines, Chat)
-    pages/        # Feature views (Actions, Decisions, Semantics)
-    lib/          # API client and utility logic
+    components/   # Analytical widgets (Timelines, Chat)
+    pages/        # Dashboard views (Actions, Decisions)
 ```
-
----
-
-## Demo Flow
-1. **Ingestion**: Drop a `.vtt` file to initiate the "Hot-Extract" pipeline.
-2. **Behavior Analysis**: View the **Collaborator Radar** to assess team dynamics.
-3. **Timeline Inspection**: Use the **Dialogue Inspector** to drill down into specific sentiment nodes.
-4. **Global Query**: Use the persistent **AI Widget** to ask cross-meeting questions.
-5. **Report Generation**: Export the action items and decision items as a finalized CSV document.
-
----
-
-## Future Roadmap: Scaling to Production
-
-- **Cloud Vector Orchestration**: Migrating to managed Vector DBs (Pinecone/Weaviate) and asynchronous task queues for enterprise-scale ingestion.
-- **Multi-Modal Diarization**: Native audio/video processing with high-accuracy speaker labeling via Whisper v3.
-- **Enterprise Integrations**: Two-way synchronization with **Jira, Slack, and Linear** for automated task and intelligence distribution.
-- **Relational Intelligence**: Transitioning to a **Graph RAG (Neo4j)** architecture to map complex relationships across months of organizational dialogue.
