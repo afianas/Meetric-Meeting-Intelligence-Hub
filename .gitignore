@@ -50,3 +50,9 @@ htmlcov/
 implementation_plan.md
 task.md
 walkthrough.md
+
+# Application Scripts & Research
+scripts/
+backend/scripts/
+audit_report.md
+*.py.test

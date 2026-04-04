@@ -8,7 +8,7 @@ from app.services.segmentation_llm_service import segment_transcript
 from app.services.emotion_service import analyze_emotion
 from app.services.embedding_service import get_embedding
 from app.services.storage_service import add_meeting
-from app.services.vector_service import add_vector, search_vector
+from app.services.vector_service import upsert_meeting_vectors, search_vector
 
 router = APIRouter()
 
@@ -50,16 +50,17 @@ async def upload_file(
 
         seg_id = str(uuid.uuid4())
         emotion_data = analyze_emotion(seg_text)
-        embedding = get_embedding(seg_text).tolist()
+        embedding = get_embedding(seg_text)
 
         processed_segments.append({
             "segment_id": seg_id,
             "speaker": seg.get("speaker", "Unknown"),
-            "role": seg.get("role", "Unknown"),
+            "role": seg.get("role", "Participant"),
             "text": seg_text,
             "emotion": emotion_data["emotion"],
             "emotion_score": float(emotion_data["confidence"]),
-            "embedding": embedding
+            "embedding": embedding,
+            "timestamp": seg.get("timestamp", 0)
         })
     
     analysis["word_count"] = len(text.split())
@@ -73,9 +74,8 @@ async def upload_file(
 
     meeting_id = str(saved["_id"])
 
-    # 🔹 Step 4: Index in FAISS
-    for seg in processed_segments:
-        add_vector(seg["embedding"], seg["segment_id"], meeting_id)
+    # 🔹 Step 4: Index in Pinecone (Batch Upsert with Enriched Metadata)
+    upsert_meeting_vectors(meeting_id, analysis["meeting_name"], processed_segments)
 
     # 🔹 Step 5: ✅ Traceability Fix - Use vector search within the SAME meeting
     decisions = analysis.get("decisions", [])
@@ -84,22 +84,19 @@ async def upload_file(
     for decision in decisions:
         decision_text = decision if isinstance(decision, str) else decision.get("decision", "")
         # Embed decision for semantic matching
-        decision_emb = get_embedding(decision_text).tolist()
+        decision_emb = get_embedding(decision_text)
         
-        # Search ONLY this meeting's segments (Rethink: top_k=2 matches)
-        # This uses the new scoped retrieval in vector_service which is 100% accurate within a meeting
-        match_ids = search_vector(decision_emb, meeting_id=meeting_id, top_k=2)
+        # Search ONLY this meeting's segments
+        matches = search_vector(decision_emb, meeting_id=meeting_id, top_k=2)
         
         evidence = []
-        for mid in match_ids:
-            # Find the segment in our processed list
-            found = next((s for s in processed_segments if s["segment_id"] == mid), None)
-            if found:
-                evidence.append({
-                    "segment_id": found["segment_id"],
-                    "speaker": found["speaker"],
-                    "text": found["text"]
-                })
+        for match in matches:
+            meta = match["metadata"]
+            evidence.append({
+                "segment_id": meta.get("segment_id"),
+                "speaker": meta.get("speaker"),
+                "text": meta.get("text")
+            })
         
         decision_traces.append({
             "decision": decision_text,

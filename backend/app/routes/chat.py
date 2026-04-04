@@ -1,210 +1,184 @@
-from fastapi import APIRouter
+import logging
 import math
-
+from fastapi import APIRouter
+from typing import List, Dict, Any
 from app.services.embedding_service import get_embedding
 from app.services.vector_service import search_vector
-from app.services.storage_service import get_segments_by_ids, get_all_meeting_titles_and_ids
+from app.services.storage_service import get_all_meeting_titles_and_ids
 from app.services.reranker_service import rerank
-from app.services.chat_service import generate_answer
+from app.services.chat_service import generate_answer, classify_query, estimate_tokens
+
+logger = logging.getLogger("app.chat_route")
 
 router = APIRouter()
 
 
-def sigmoid(x: float) -> float:
-    """Standard sigmoid function for logit-to-probability mapping."""
-    return 1 / (1 + math.exp(-x))
+# Constants for RAG Tuning
+RELEVANCE_THRESHOLD = 0.0
+CONTEXT_TOKEN_BUDGET = 1200
 
+def normalize_text(text: str) -> str:
+    """Normalize text for deduplication."""
+    return " ".join(text.lower().split())
 
-def calibrated_confidence(score: float | None) -> float:
-    """Map relevance score (Inner Product or Reranker) to confidence.
-    
-    After migration to BGE-Reranker, scores are logits. 
-    Sigmoid activation transforms these into a meaningful [0, 1] range.
-    Smoothing factor of 2.0 is applied to prevent overconfidence.
+def stable_sigmoid(x: float) -> float:
     """
-    if score is None:
+    Numerically stable sigmoid function to prevent overflow for large logits.
+    Maps raw Reranker scores (-inf, +inf) to confidence probabilities (0, 1).
+    """
+    try:
+        if x >= 0:
+            z = math.exp(-x)
+            return 1 / (1 + z)
+        else:
+            z = math.exp(x)
+            return z / (1 + z)
+    except OverflowError:
+        return 1.0 if x > 0 else 0.0
+    except Exception:
         return 0.0
-        
-    # Apply sigmoid with 2.0 smoothing as per implementation plan
-    conf = sigmoid(float(score) / 2.0)
-    
-    # 3. Ceiling (UX Stability)
-    return min(conf, 0.98)
 
-
-def detect_query_mode(query: str, meeting_id: str = None) -> str:
-    """Detects if a query targets a specific meeting or requires cross-meeting synthesis."""
-    if meeting_id:
-        return "focused"
-    
-    query_lc = query.lower()
-    
-    # 1st Pass: Check for explicit meeting names in query (Case-Insensitive)
-    # This allows users to say "What happened in the Project X meeting?" and get focused results.
-    existing_meetings = get_all_meeting_titles_and_ids()
-    for m in existing_meetings:
-        if m["title"].lower() in query_lc:
-            return "focused"
-
-    # 2nd Pass: Global Keywords/Intents
-    global_patterns = [
-        "across meetings", "all meetings", "summarize meetings", 
-        "trends", "overall", "compare", "similarities", "differences",
-        "across all", "every meeting", "workspace-wide"
-    ]
-    
-    if any(p in query_lc for p in global_patterns):
-        return "global"
-        
-    # Heuristic: Plural "meetings" without global keywords usually implies a general search, 
-    # but we'll default to focused for precision unless "all" or specific cross-meeting 
-    # terms are used.
-    return "focused"
-
-
-def diversity_sample(ranked_results, target_count=15):
-    """Ensures multiple meetings are represented in the final context."""
-    if not ranked_results:
-        return []
-        
-    # Group reranked segments by meeting_id
-    grouped = {}
-    for score, seg in ranked_results:
-        m_id = seg.get("meeting_id", "unknown")
-        if m_id not in grouped:
-            grouped[m_id] = []
-        grouped[m_id].append((score, seg))
-        
-    selected = []
-    
-    # 1st Pass: Pick the single best segment from each unique meeting
-    # This guarantees diversity in the foundation of the context
-    for m_id in list(grouped.keys()):
-        if grouped[m_id]:
-            selected.append(grouped[m_id].pop(0))
-        
-    # 2nd Pass: Fill the remaining slots with the next-best segments globally
-    remaining = []
-    for m_id in grouped:
-        remaining.extend(grouped[m_id])
-    
-    # Sort by reranker score
-    remaining.sort(key=lambda x: x[0], reverse=True)
-    
-    while len(selected) < target_count and remaining:
-        selected.append(remaining.pop(0))
-        
-    # Restore original score-based ordering for the LLM
-    selected.sort(key=lambda x: x[0], reverse=True)
-    return selected[:target_count]
+def build_context(segments: List[Dict[str, Any]]) -> str:
+    """Builds structured context for the LLM with metadata headers."""
+    parts = []
+    for seg in segments:
+        m_title = seg.get("meeting_title") or "Unnamed Meeting"
+        speaker = seg.get("speaker") or "Unknown"
+        role = seg.get("role") or "Participant"
+        parts.append(f"[Meeting: {m_title}] [Speaker: {speaker} ({role})]\n{seg.get('text', '')}")
+    return "\n\n".join(parts)
 
 
 @router.get("/chat")
 def chat(query: str, meeting_id: str = None):
-    # Step 1: Detect Mode & Configure Retrieval
-    mode = detect_query_mode(query, meeting_id)
-    
-    # Adaptive configuration
-    if mode == "global":
-        top_k_candidates = 100
-        rerank_n = 40
-        target_context_n = 15
-    else:
-        top_k_candidates = 20
-        rerank_n = 10
-        target_context_n = 10
+    try:
+        # Step 1: Detect Mode (LLM-based classification)
+        mode = classify_query(query) if not meeting_id else "focused"
+        
+        # Adaptive retrieval depth
+        top_k = 30 if mode != "focused" else 15
+        
+        # Step 2: Embed Query
+        query_embedding = get_embedding(query)
 
-    # Step 2: Embed query
-    query_embedding = get_embedding(query)
+        # Step 3: Retrieve from Pinecone (prod namespace)
+        matches = search_vector(query_embedding, meeting_id=meeting_id, top_k=top_k)
+        if not matches:
+            return {
+                "query": query,
+                "answer": "No relevant information found in meetings.",
+                "confidence": 0.0,
+                "sources": [],
+                "meetings_used": 0
+            }
 
-    # Step 3: FAISS search
-    segment_ids = search_vector(query_embedding, meeting_id=meeting_id, top_k=top_k_candidates)
+        # Step 4: Deduplicate (Near-Identical Text)
+        seen_hashes = set()
+        unique_segments = []
+        for match in matches:
+            meta = match["metadata"]
+            norm_text = normalize_text(meta.get("text", ""))
+            if norm_text and norm_text not in seen_hashes:
+                seen_hashes.add(norm_text)
+                unique_segments.append(meta)
 
-    if not segment_ids:
+        # Step 5: High-Precision Reranking (BGE)
+        reranked = rerank(query, unique_segments)
+
+        # Step 6: Relevance Thresholding (0.2)
+        filtered = [(score, seg) for score, seg in reranked if score >= RELEVANCE_THRESHOLD]
+        
+        if not filtered:
+            logger.info(f"⚠️ Query '{query}' failed relevance threshold (best score: {reranked[0][0] if reranked else 'N/A'})")
+            return {
+                "query": query,
+                "answer": "No information sufficiently relevant to your question was found.",
+                "confidence": 0.1,
+                "sources": [],
+                "meetings_used": 0
+            }
+
+        if len(filtered) < 2:
+            logger.warning(f"Low-confidence retrieval (only {len(filtered)} chunk passed threshold)")
+
+        # Step 7: Diversity Sampling (Multi-meeting selection)
+        final_selection = []
+        if mode != "focused":
+            # Group by meeting_id
+            by_meeting = {}
+            for score, seg in filtered:
+                mid = seg.get("meeting_id")
+                if mid not in by_meeting: by_meeting[mid] = []
+                by_meeting[mid].append((score, seg))
+            
+            # Pick top from each
+            for mid in list(by_meeting.keys()):
+                final_selection.append(by_meeting[mid].pop(0))
+            
+            # Sort remaining
+            remaining = []
+            for mid in by_meeting: remaining.extend(by_meeting[mid])
+            remaining.sort(key=lambda x: x[0], reverse=True)
+            
+            # Fill budget
+            token_count = sum(estimate_tokens(s[1].get("text", "")) for s in final_selection)
+            for score, seg in remaining:
+                tokens = estimate_tokens(seg.get("text", ""))
+                if token_count + tokens > CONTEXT_TOKEN_BUDGET: break
+                final_selection.append((score, seg))
+                token_count += tokens
+        else:
+            # Focused - just token truncation
+            token_count = 0
+            for score, seg in filtered:
+                tokens = estimate_tokens(seg.get("text", ""))
+                if token_count + tokens > CONTEXT_TOKEN_BUDGET: break
+                final_selection.append((score, seg))
+                token_count += tokens
+
+        final_segments = [s[1] for s in final_selection]
+        meeting_ids_used = set(s.get("meeting_id") for s in final_segments)
+
+        # Step 8: Context Building & Answer Generation
+        context = build_context(final_segments)
+        # Log metadata only for privacy
+        logger.info(f"✨ Generating answer using {len(final_segments)} segments from {len(meeting_ids_used)} meetings.")
+        
+        answer = generate_answer(query, context, mode=mode, meetings_used=len(meeting_ids_used))
+
+        # Step 9: Format Rich Response
+        rich_sources = []
+        for seg in final_segments:
+            rich_sources.append({
+                "segment_id": seg.get("segment_id", "unknown"),
+                "meeting_id": seg.get("meeting_id", "unknown"),
+                "meeting_title": seg.get("meeting_title", "Unnamed Meeting"),
+                "speaker": seg.get("speaker", "Unknown"),
+                "role": seg.get("role", "Participant"),
+                "text": seg.get("text", "")[:300],
+                "emotion": seg.get("emotion", "neutral")
+            })
+
+        # Step 9: Final Response with Normalized Confidence
+        # Use top reranked raw score for confidence (even if it's below threshold, 
+        # though it won't be here since we filtered).
+        top_logit = final_selection[0][0] if final_selection else 0.0
+        confidence = round(stable_sigmoid(top_logit), 3) if final_selection else 0.0
+
+        return {
+            "query": str(query),
+            "answer": str(answer),
+            "confidence": confidence,
+            "sources": rich_sources,
+            "meetings_used": len(meeting_ids_used)
+        }
+
+    except Exception as e:
+        logger.error(f"🚨 Chat endpoint failure: {e}")
         return {
             "query": query,
-            "answer": "No relevant information found in meetings",
+            "answer": "Sorry, I encountered a system error. Please try again or contact support.",
             "confidence": 0.0,
             "sources": [],
             "meetings_used": 0
         }
-
-    # Step 4: Fetch segments
-    segments = get_segments_by_ids(segment_ids)
-
-    # Step 5: Rerank
-    # Pass dynamic rerank_n
-    ranked = rerank(query, segments, top_n=rerank_n)
-
-    # Step 6: Diversity Sampling & Safety Fallback
-    unique_meeting_ids = set(seg.get("meeting_id") for _, seg in ranked if seg.get("meeting_id"))
-    
-    if mode == "global" and len(unique_meeting_ids) > 1:
-        # Apply diversity sampling to represent multiple meetings
-        final_ranked = diversity_sample(ranked, target_count=target_context_n)
-    else:
-        # Focused mode or single-meeting global fallback
-        final_ranked = ranked[:target_context_n]
-
-    scores = [float(score) for score, _ in final_ranked]
-    selected_segments = [seg for _, seg in final_ranked]
-    final_meetings_used = len(set(seg.get("meeting_id") for seg in selected_segments if seg.get("meeting_id")))
-
-    # Step 7: Build context
-    context_parts = []
-    for seg in selected_segments:
-        m_title = seg.get("meeting_title", "Unnamed Meeting")
-        part = f"""
-Meeting: {m_title}
-Speaker: {seg.get('speaker')} ({seg.get('role')})
-Text: {seg.get('text')}
-Emotion: {seg.get('emotion')}
-"""
-        context_parts.append(part)
-
-    context = "\n".join(context_parts)
-
-    # Step 8: LLM answer (pass mode and meetings_used for conditioning)
-    answer = generate_answer(query, context, mode=mode, meetings_used=final_meetings_used)
-
-    # Step 9: Calibrated Confidence
-    if scores:
-        top_score = scores[0]
-        confidence = calibrated_confidence(top_score)
-    else:
-        confidence = 0.0
-
-    # Step 10: Build rich sources (defensive field checks)
-    rich_sources = []
-    seen_texts = set()
-    meeting_ids_seen = set()
-    for seg in selected_segments:
-        # Check multiple possible text fields for robustness
-        snippet = seg.get("text") or seg.get("content") or seg.get("message") or ""
-        snippet = snippet.strip()
-        
-        # Deduplicate identical snippets for cleaner reporting
-        if not snippet or snippet in seen_texts:
-            continue
-        seen_texts.add(snippet)
-
-        rich_sources.append({
-            "segment_id": seg.get("segment_id", "unknown"),
-            "meeting_id": seg.get("meeting_id", "unknown"),
-            "meeting_title": seg.get("meeting_title", "Unnamed Meeting"),
-            "speaker": seg.get("speaker", "Unknown"),
-            "role": seg.get("role", ""),
-            "text": snippet[:300],
-            "emotion": seg.get("emotion", "neutral")
-        })
-        meeting_ids_seen.add(seg.get("meeting_id", "unknown"))
-
-    # Step 10: Build rich sources (defensive field checks)
-
-    return {
-        "query": str(query),
-        "answer": str(answer),
-        "confidence": confidence,
-        "sources": rich_sources,
-        "meetings_used": len(meeting_ids_seen)
-    }

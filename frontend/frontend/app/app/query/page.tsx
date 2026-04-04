@@ -99,20 +99,6 @@ export default function QueryEnginePage() {
           <p className="mt-2 text-muted-foreground">Query across all your meeting transcripts using RAG-powered semantic search.</p>
         </div>
 
-        {/* Suggested queries — only when no messages yet */}
-        {messages.length === 0 && (
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-3 flex-shrink-0">
-            {suggestedQueries.map(s => (
-              <Card key={s.title} className="cursor-pointer transition-all hover:border-primary hover:shadow-md" onClick={() => handleSubmit(s.title)}>
-                <CardContent className="p-4">
-                  <s.icon className="h-5 w-5 text-primary" />
-                  <h3 className="mt-3 font-medium text-foreground">{s.title}</h3>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        )}
-
         {/* Chat area */}
         <Card className="flex-1 flex flex-col overflow-hidden">
           <CardContent className="flex flex-col h-full p-0 overflow-hidden">
@@ -320,14 +306,37 @@ export default function QueryEnginePage() {
         <Card>
           <CardContent className="p-4 space-y-3 text-sm text-muted-foreground">
             <p className="text-xs font-medium text-foreground">How it works</p>
-            <div className="space-y-2">
-              <div className="flex gap-2"><span className="text-primary font-mono text-xs mt-0.5">1</span><span>Context detection identifies "Focused" vs "Global" intents</span></div>
-              <div className="flex gap-2"><span className="text-primary font-mono text-xs mt-0.5">2</span><span>Adaptive search expands to 100 segments for broad queries</span></div>
-              <div className="flex gap-2"><span className="text-primary font-mono text-xs mt-0.5">3</span><span>Diversity sampling ensures balanced multi-meeting representation</span></div>
-              <div className="flex gap-2"><span className="text-primary font-mono text-xs mt-0.5">4</span><span>BGE Reranker selects high-precision evidence for the LLM</span></div>
+            <div className="space-y-2.5 text-[13px] leading-relaxed">
+              <div className="flex gap-2.5"><span className="text-primary font-mono text-xs mt-0.5">1</span><span>LLM classifies query intent into **Focused** vs. **Global** modes.</span></div>
+              <div className="flex gap-2.5"><span className="text-primary font-mono text-xs mt-0.5">2</span><span>Two-stage retrieval: **Pinecone** for recall, **BGE-Reranker** for precision.</span></div>
+              <div className="flex gap-2.5"><span className="text-primary font-mono text-xs mt-0.5">3</span><span>Diversity sampling ensures **balanced multi-meeting** representation.</span></div>
+              <div className="flex gap-2.5"><span className="text-primary font-mono text-xs mt-0.5">4</span><span>**Sigmoid normalization** provides probabilistic confidence scoring.</span></div>
             </div>
           </CardContent>
         </Card>
+
+        {/* Persistent Suggested Queries on the Sidebar */}
+        <div className="space-y-3">
+          <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground/60 px-1">Suggested Queries</h3>
+          <div className="space-y-2">
+            {suggestedQueries.map(s => (
+              <button 
+                key={s.title} 
+                className="w-full text-left p-3 rounded-xl border border-border/40 bg-card/30 hover:bg-primary/5 hover:border-primary/30 transition-all group"
+                onClick={() => handleSubmit(s.title)}
+              >
+                <div className="flex items-start gap-3">
+                  <div className="mt-0.5 p-1.5 rounded-md bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
+                    <s.icon className="h-4 w-4" />
+                  </div>
+                  <span className="text-[13px] font-medium leading-relaxed text-muted-foreground group-hover:text-foreground transition-colors">
+                    {s.title}
+                  </span>
+                </div>
+              </button>
+            ))}
+          </div>
+        </div>
         {messages.length > 0 && (
           <Button variant="ghost" size="sm" className="w-full text-muted-foreground" onClick={() => setMessages([])}>Clear conversation</Button>
         )}
