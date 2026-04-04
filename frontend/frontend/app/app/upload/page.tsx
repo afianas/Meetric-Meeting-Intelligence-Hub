@@ -7,16 +7,16 @@ import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
-import { 
-  Upload, 
-  FileText, 
-  CheckCircle2, 
-  AlertCircle, 
-  Sparkles, 
-  Loader2, 
-  Trash2, 
-  X, 
-  Play, 
+import {
+  Upload,
+  FileText,
+  CheckCircle2,
+  AlertCircle,
+  Sparkles,
+  Loader2,
+  Trash2,
+  X,
+  Play,
   RefreshCcw,
   ArrowRight,
   CloudUpload,
@@ -88,26 +88,26 @@ export default function UploadPage() {
   // Batch Selection Handler
   const handleFilesSelected = (files: FileList | null) => {
     if (!files) return;
-    
+
     setGlobalError(null);
     const newItems: UploadItem[] = [];
     const allowedExts = [".txt", ".vtt"];
-    
+
     Array.from(files).forEach(file => {
       const ext = file.name.substring(file.name.lastIndexOf(".")).toLowerCase();
-      
+
       // Validation: Type
       if (!allowedExts.includes(ext)) {
         setGlobalError(`Skipped "${file.name}": Only .txt and .vtt files supported.`);
         return;
       }
-      
+
       // Validation: Size
       if (file.size === 0) {
         setGlobalError(`Skipped "${file.name}": File is empty.`);
         return;
       }
-      
+
       // Validation: Duplicate in queue
       const isDuplicate = uploadQueue.some(item => item.file.name === file.name && item.file.size === file.size);
       if (isDuplicate) {
@@ -145,16 +145,16 @@ export default function UploadPage() {
   const processBatch = async () => {
     if (isBatchProcessing) return;
     setIsBatchProcessing(true);
-    
+
     const idleItems = uploadQueue.filter(item => item.status === "idle" || item.status === "error");
-    
+
     for (const item of idleItems) {
       try {
         updateItem(item.id, { status: "uploading", progress: 10 });
         const uploadProgressInterval = setInterval(() => {
-          setUploadQueue(prev => prev.map(queueItem => 
-            queueItem.id === item.id && queueItem.progress < 30 
-              ? { ...queueItem, progress: queueItem.progress + 5 } 
+          setUploadQueue(prev => prev.map(queueItem =>
+            queueItem.id === item.id && queueItem.progress < 30
+              ? { ...queueItem, progress: queueItem.progress + 5 }
               : queueItem
           ));
         }, 100);
@@ -164,21 +164,21 @@ export default function UploadPage() {
         updateItem(item.id, { status: "processing", progress: 40 });
 
         const result = await uploadTranscript(item.file, item.meetingName);
-        
-        updateItem(item.id, { 
-          status: "completed", 
-          progress: 100, 
-          resultId: result._id 
+
+        updateItem(item.id, {
+          status: "completed",
+          progress: 100,
+          resultId: result._id
         });
         queryClient.invalidateQueries({ queryKey: ['meetings'] });
       } catch (err: any) {
-        updateItem(item.id, { 
-          status: "error", 
-          error: err?.message || "Internal processing error" 
+        updateItem(item.id, {
+          status: "error",
+          error: err?.message || "Internal processing error"
         });
       }
     }
-    
+
     setIsBatchProcessing(false);
   };
 
@@ -196,26 +196,25 @@ export default function UploadPage() {
           Synthesize Dialogue into <span className="text-primary italic">Knowledge</span>
         </h1>
         <p className="text-muted-foreground text-lg leading-relaxed font-light">
-          Transform raw meeting transcripts into high-fidelity editorial intelligence. 
+          Transform raw meeting transcripts into high-fidelity editorial intelligence.
           Meetric extracts decisions and intent with surgical precision.
         </p>
       </div>
 
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-12 max-w-7xl mx-auto w-full px-4 sm:px-6">
         <div className="lg:col-span-8 space-y-10">
-          
+
           {/* Drop zone - PREMIUM GLASSMORPHIC RE-DESIGN */}
           <div
-            className={`relative group overflow-hidden rounded-[2.5rem] border border-border/40 bg-background/40 backdrop-blur-md transition-all duration-500 ease-out ${
-              isDragging 
-                ? "border-primary/40 bg-primary/5 scale-[1.01] shadow-2xl shadow-primary/10" 
+            className={`relative group overflow-hidden rounded-[2.5rem] border border-border/40 bg-background/40 backdrop-blur-md transition-all duration-500 ease-out ${isDragging
+                ? "border-primary/40 bg-primary/5 scale-[1.01] shadow-2xl shadow-primary/10"
                 : "hover:border-primary/20 hover:bg-background/60 shadow-sm"
-            }`}
+              }`}
             onDragOver={e => { e.preventDefault(); setIsDragging(true) }}
             onDragLeave={() => setIsDragging(false)}
-            onDrop={e => { 
-              e.preventDefault(); 
-              setIsDragging(false); 
+            onDrop={e => {
+              e.preventDefault();
+              setIsDragging(false);
               handleFilesSelected(e.dataTransfer.files);
             }}
           >
@@ -225,31 +224,30 @@ export default function UploadPage() {
               <div className="absolute bottom-[-20%] right-[-10%] w-[60%] h-[60%] rounded-full bg-primary blur-[120px] opacity-60" />
             </div>
 
-            <input 
-              type="file" 
-              ref={fileInputRef} 
-              className="hidden" 
+            <input
+              type="file"
+              ref={fileInputRef}
+              className="hidden"
               multiple
-              onChange={e => handleFilesSelected(e.target.files)} 
-              accept=".txt,.vtt" 
+              onChange={e => handleFilesSelected(e.target.files)}
+              accept=".txt,.vtt"
             />
-            
+
             <div className="flex flex-col items-center justify-center py-24 px-6 relative z-10 text-center">
-              <div className={`flex h-24 w-24 items-center justify-center rounded-3xl rotate-[-4deg] transition-all duration-500 shadow-xl ${
-                isDragging ? "bg-primary scale-110 rotate-0 shadow-primary/20" : "bg-muted/40 group-hover:bg-primary/10 group-hover:rotate-0"
-              }`}>
+              <div className={`flex h-24 w-24 items-center justify-center rounded-3xl rotate-[-4deg] transition-all duration-500 shadow-xl ${isDragging ? "bg-primary scale-110 rotate-0 shadow-primary/20" : "bg-muted/40 group-hover:bg-primary/10 group-hover:rotate-0"
+                }`}>
                 <CloudUpload className={`h-12 w-12 transition-colors duration-500 ${isDragging ? "text-primary-foreground" : "text-muted-foreground group-hover:text-primary"}`} />
               </div>
-              
+
               <div className="mt-10 space-y-3 px-4">
-                <h3 className="text-2xl font-bold text-foreground tracking-tight">Drop your recordings</h3>
+                <h3 className="text-2xl font-bold text-foreground tracking-tight">Drop your transcripts</h3>
                 <p className="text-sm text-muted-foreground font-light max-w-sm mx-auto leading-relaxed">
-                  Support for multi-file <Badge variant="secondary" className="mx-1 font-mono text-[10px] bg-primary/5 text-primary border-none">.vtt</Badge> and 
+                  Support for multi-file <Badge variant="secondary" className="mx-1 font-mono text-[10px] bg-primary/5 text-primary border-none">.vtt</Badge> and
                   <Badge variant="secondary" className="mx-1 font-mono text-[10px] bg-primary/5 text-primary border-none">.txt</Badge> indexing.
                 </p>
               </div>
 
-              <Button 
+              <Button
                 variant="outline"
                 className={`mt-12 h-12 px-10 rounded-2xl border-border/60 bg-background/50 backdrop-blur-sm font-bold uppercase tracking-widest text-[10px] transition-all duration-500 hover:shadow-xl hover:border-primary/40 active:scale-95 ${isBatchProcessing ? "opacity-50 cursor-not-allowed" : ""}`}
                 onClick={() => fileInputRef.current?.click()}
@@ -260,7 +258,7 @@ export default function UploadPage() {
 
               {globalError && (
                 <div className="mt-8 flex items-center gap-3 text-[10px] font-bold uppercase tracking-widest text-destructive bg-destructive/10 backdrop-blur-sm px-5 py-3 rounded-2xl border border-destructive/20 animate-in fade-in slide-in-from-bottom-2 duration-500">
-                  <AlertCircle className="h-4 w-4 shrink-0" /> 
+                  <AlertCircle className="h-4 w-4 shrink-0" />
                   <span>{globalError}</span>
                   <X className="h-3 w-3 ml-2 cursor-pointer opacity-50 hover:opacity-100" onClick={() => setGlobalError(null)} />
                 </div>
@@ -277,18 +275,18 @@ export default function UploadPage() {
                   <Badge variant="outline" className="text-[10px] font-bold text-primary/60 border-primary/20 px-2">{uploadQueue.length}</Badge>
                 </div>
                 <div className="flex items-center gap-3">
-                   <Button 
-                    variant="ghost" 
-                    size="sm" 
+                  <Button
+                    variant="ghost"
+                    size="sm"
                     className="text-[10px] uppercase tracking-[0.2em] font-black h-8 text-muted-foreground/40 hover:text-destructive transition-colors px-4 rounded-xl"
                     onClick={() => setUploadQueue([])}
                     disabled={isBatchProcessing}
                   >
                     Discard All
                   </Button>
-                  <Button 
-                    size="sm" 
-                    className="text-[10px] uppercase tracking-[0.2em] font-black h-8 bg-primary hover:bg-primary/90 px-6 rounded-xl shadow-lg border-none" 
+                  <Button
+                    size="sm"
+                    className="text-[10px] uppercase tracking-[0.2em] font-black h-8 bg-primary hover:bg-primary/90 px-6 rounded-xl shadow-lg border-none"
                     disabled={!hasProcessableItems || isBatchProcessing}
                     onClick={processBatch}
                   >
@@ -307,17 +305,16 @@ export default function UploadPage() {
                     <CardContent className="p-6 flex flex-col gap-5">
                       <div className="flex items-start justify-between gap-6">
                         <div className="flex items-start gap-5 flex-1 min-w-0">
-                          <div className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl transition-all duration-500 ${
-                            item.status === "completed" ? "bg-green-500/10 text-green-600" : 
-                            item.status === "error" ? "bg-destructive/10 text-destructive" : 
-                            "bg-primary/5 text-primary group-hover:bg-primary/10"
-                          }`}>
+                          <div className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl transition-all duration-500 ${item.status === "completed" ? "bg-green-500/10 text-green-600" :
+                              item.status === "error" ? "bg-destructive/10 text-destructive" :
+                                "bg-primary/5 text-primary group-hover:bg-primary/10"
+                            }`}>
                             {item.status === "completed" ? <CheckCircle2 className="h-7 w-7" /> :
-                             item.status === "error" ? <AlertCircle className="h-7 w-7" /> :
-                             item.status === "idle" ? <FileText className="h-7 w-7" /> :
-                             <Loader2 className="h-7 w-7 animate-spin" />}
+                              item.status === "error" ? <AlertCircle className="h-7 w-7" /> :
+                                item.status === "idle" ? <FileText className="h-7 w-7" /> :
+                                  <Loader2 className="h-7 w-7 animate-spin" />}
                           </div>
-                          
+
                           <div className="flex-1 space-y-2 min-w-0">
                             <div className="flex items-center gap-3">
                               <span className="text-[9px] font-bold uppercase tracking-[0.2em] text-primary/40">Meeting Title</span>
@@ -341,12 +338,12 @@ export default function UploadPage() {
                             </div>
                           </div>
                         </div>
-                        
+
                         <div className="flex items-center gap-2 pt-2 shrink-0">
                           {item.status === "error" && (
-                            <Button 
-                              variant="ghost" 
-                              size="icon" 
+                            <Button
+                              variant="ghost"
+                              size="icon"
                               className="h-9 w-9 text-primary hover:bg-primary/10 rounded-xl"
                               onClick={() => retryItem(item.id)}
                             >
@@ -354,18 +351,18 @@ export default function UploadPage() {
                             </Button>
                           )}
                           {item.status === "completed" && item.resultId && (
-                            <Button 
-                              variant="outline" 
-                              size="sm" 
+                            <Button
+                              variant="outline"
+                              size="sm"
                               className="h-9 text-[10px] font-bold uppercase tracking-widest text-green-600 border-green-600/20 bg-green-500/5 hover:bg-green-500/10 rounded-xl px-4"
                               onClick={() => router.push(`/app/transcripts?id=${item.resultId}`)}
                             >
                               Explore <TrendingUp className="h-3 w-3 ml-2 opacity-50" />
                             </Button>
                           )}
-                          <Button 
-                            variant="ghost" 
-                            size="icon" 
+                          <Button
+                            variant="ghost"
+                            size="icon"
                             className="h-9 w-9 text-muted-foreground/20 hover:text-destructive hover:bg-destructive/10 transition-all rounded-xl"
                             onClick={() => removeItem(item.id)}
                             disabled={item.status === "uploading" || item.status === "processing"}
@@ -381,24 +378,22 @@ export default function UploadPage() {
                             <div className="flex items-center gap-3">
                               {item.status === "uploading" && <div className="h-1.5 w-1.5 bg-primary rounded-full animate-pulse" />}
                               {item.status === "processing" && <Sparkles className="h-3.5 w-3.5 text-primary animate-pulse" />}
-                              <span className={`text-[10px] font-black uppercase tracking-[0.2em] ${
-                                item.status === "error" ? "text-destructive" : 
-                                item.status === "completed" ? "text-green-600" : "text-primary"
-                              }`}>
-                                {item.status === "uploading" ? "Transporting Archive" : 
-                                 item.status === "processing" ? "Extracting Intel" : 
-                                 item.status === "completed" ? "Synthesis Ready" : 
-                                 item.status === "error" ? "Operational Fault" : "Queued"}
+                              <span className={`text-[10px] font-black uppercase tracking-[0.2em] ${item.status === "error" ? "text-destructive" :
+                                  item.status === "completed" ? "text-green-600" : "text-primary"
+                                }`}>
+                                {item.status === "uploading" ? "Transporting Archive" :
+                                  item.status === "processing" ? "Extracting Intel" :
+                                    item.status === "completed" ? "Synthesis Ready" :
+                                      item.status === "error" ? "Operational Fault" : "Queued"}
                               </span>
                             </div>
                             <span className="text-[10px] font-mono font-black text-muted-foreground/40">{item.progress}%</span>
                           </div>
                           <div className="relative h-1 w-full bg-muted/20 rounded-full overflow-hidden shadow-inner">
-                            <div 
-                              className={`absolute inset-y-0 left-0 transition-all duration-1000 ease-out rounded-full ${
-                                item.status === "error" ? "bg-destructive" : 
-                                item.status === "completed" ? "bg-green-500" : "bg-primary"
-                              }`}
+                            <div
+                              className={`absolute inset-y-0 left-0 transition-all duration-1000 ease-out rounded-full ${item.status === "error" ? "bg-destructive" :
+                                  item.status === "completed" ? "bg-green-500" : "bg-primary"
+                                }`}
                               style={{ width: `${item.progress}%` }}
                             />
                           </div>
@@ -421,7 +416,7 @@ export default function UploadPage() {
         <div className="lg:col-span-4 space-y-8">
           <Card className="border-border/40 bg-background/40 backdrop-blur-md shadow-sm rounded-[2.5rem] overflow-hidden relative group">
             <div className="absolute top-0 right-0 p-6">
-                <Zap className="h-5 w-5 text-primary opacity-20" />
+              <Zap className="h-5 w-5 text-primary opacity-20" />
             </div>
             <CardHeader className="p-8 pb-4">
               <CardTitle className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground/60">
@@ -439,7 +434,7 @@ export default function UploadPage() {
                     <p className="text-xs text-muted-foreground/80 leading-relaxed font-light">Llama 3.3 identifies consensus points with evidentiary backing.</p>
                   </div>
                 </div>
-                
+
                 <div className="group flex items-start gap-4 transition-transform hover:translate-x-1 duration-300">
                   <div className="h-10 w-10 rounded-2xl bg-primary/10 flex items-center justify-center shrink-0 border border-border/20">
                     <span className="text-xs font-black text-primary">2</span>
@@ -474,19 +469,19 @@ export default function UploadPage() {
           </Card>
 
           <Card className="border-border/40 bg-primary/5 backdrop-blur-sm rounded-[2rem] overflow-hidden shadow-none border-primary/10 transition-all hover:bg-primary/10 duration-500">
-             <CardContent className="p-8">
-                <div className="flex items-start gap-5">
-                  <div className="h-12 w-12 rounded-2xl bg-background flex items-center justify-center shrink-0 shadow-lg border border-primary/10 rotate-3">
-                    <Info className="h-6 w-6 text-primary" />
-                  </div>
-                  <div>
-                    <h4 className="text-sm font-bold tracking-tight text-foreground uppercase tracking-widest px-1">Privacy Shield</h4>
-                    <p className="text-[11px] leading-relaxed text-muted-foreground/60 mt-2 font-light">
-                      Transcripts are processed in isolated vector spaces. We do not utilize workspace data for training public LLMs.
-                    </p>
-                  </div>
+            <CardContent className="p-8">
+              <div className="flex items-start gap-5">
+                <div className="h-12 w-12 rounded-2xl bg-background flex items-center justify-center shrink-0 shadow-lg border border-primary/10 rotate-3">
+                  <Info className="h-6 w-6 text-primary" />
                 </div>
-             </CardContent>
+                <div>
+                  <h4 className="text-sm font-bold tracking-tight text-foreground uppercase tracking-widest px-1">Privacy Shield</h4>
+                  <p className="text-[11px] leading-relaxed text-muted-foreground/60 mt-2 font-light">
+                    Transcripts are processed in isolated vector spaces. We do not utilize workspace data for training public LLMs.
+                  </p>
+                </div>
+              </div>
+            </CardContent>
           </Card>
         </div>
       </div>
@@ -505,8 +500,8 @@ export default function UploadPage() {
 
         {loadingMeetings ? (
           <div className="flex flex-col items-center justify-center py-24 gap-6">
-              <Loader2 className="animate-spin h-12 w-12 text-primary opacity-20" />
-              <p className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground/40 animate-pulse">Scanning Neural Cache</p>
+            <Loader2 className="animate-spin h-12 w-12 text-primary opacity-20" />
+            <p className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground/40 animate-pulse">Scanning Neural Cache</p>
           </div>
         ) : (meetings as BackendMeeting[]).length === 0 ? (
           <div className="py-24 text-center space-y-6 bg-muted/5 rounded-[3rem] border-2 border-dashed border-border/20 max-w-4xl mx-auto">
@@ -520,8 +515,8 @@ export default function UploadPage() {
             {(meetings as BackendMeeting[]).map((m: BackendMeeting) => {
               const mapped = normalizeMeeting(m)
               return (
-                <Card 
-                  key={m._id} 
+                <Card
+                  key={m._id}
                   className="group relative border-border/40 bg-background/40 backdrop-blur-md rounded-[2.5rem] transition-all duration-500 hover:shadow-2xl hover:shadow-primary/5 hover:border-primary/40 cursor-pointer overflow-hidden"
                   onClick={() => router.push(`/app/transcripts?id=${m._id}`)}
                 >
@@ -553,9 +548,9 @@ export default function UploadPage() {
                     <div className="flex items-center justify-between pt-2">
                       <div className="flex -space-x-2">
                         {mapped.avatars.slice(0, 3).map((speaker: string, i: number) => (
-                           <div key={i} className="h-7 w-7 rounded-sm border-2 border-background bg-secondary flex items-center justify-center text-[8px] font-black uppercase tracking-tighter" style={{ borderRadius: '4px' }}>
-                             {getInitials(speaker)}
-                           </div>
+                          <div key={i} className="h-7 w-7 rounded-sm border-2 border-background bg-secondary flex items-center justify-center text-[8px] font-black uppercase tracking-tighter" style={{ borderRadius: '4px' }}>
+                            {getInitials(speaker)}
+                          </div>
                         ))}
                         {mapped.speakers > 3 && (
                           <div className="h-7 w-7 rounded-sm border-2 border-background bg-primary/10 flex items-center justify-center text-[8px] font-black text-primary" style={{ borderRadius: '4px' }}>
@@ -565,7 +560,7 @@ export default function UploadPage() {
                       </div>
                       <Button
                         variant="ghost" size="icon" className="h-9 w-9 text-muted-foreground/20 hover:text-destructive hover:bg-destructive/10 transition-all duration-300 rounded-xl"
-                        onClick={(e) => { e.stopPropagation(); handleDelete(m._id); }} 
+                        onClick={(e) => { e.stopPropagation(); handleDelete(m._id); }}
                         disabled={deleteMutation.isPending && deleteMutation.variables === m._id}
                       >
                         {deleteMutation.isPending && deleteMutation.variables === m._id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}

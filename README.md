@@ -136,6 +136,10 @@ graph TD
   E --> F[Llama 3.3-70B via Groq]
   B --> G[DistilBERT Emotion Model]
   F --> A
+<<<<<<< HEAD
+  
+=======
+>>>>>>> 9f2cfeb1a2ece5800c2099389078ca2533ff5866
 ```
 
 ### **Component Walkthrough**
@@ -229,3 +233,4 @@ frontend/
 - **Multi-Modal Diarization**: Native audio/video processing with high-accuracy speaker labeling via Whisper v3.
 - **Enterprise Integrations**: Two-way synchronization with **Jira, Slack, and Linear** for automated task and intelligence distribution.
 - **Relational Intelligence**: Transitioning to a **Graph RAG (Neo4j)** architecture to map complex relationships across months of organizational dialogue.
+

@@ -19,6 +19,7 @@ Your task is to analyze the transcript and extract:
 
 IMPORTANT INSTRUCTIONS:
 - Return ONLY valid JSON
+- DO NOT use Markdown formatting (like ** for bold) in any of the fields (e.g., who, task, decisions).
 - DO NOT include markdown
 - DO NOT include explanations
 - Ensure valid JSON

@@ -4,9 +4,12 @@ pymongo
 certifi
 numpy
 sentence-transformers
+transformers
+torch
 faiss-cpu
 groq
 python-dotenv
 python-multipart
 pydantic
 httpx
+reportlab
