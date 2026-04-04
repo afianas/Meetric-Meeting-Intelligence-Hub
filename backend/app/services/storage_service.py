@@ -2,10 +2,15 @@ from app.services.vector_service import add_vector, reset_vectors
 from bson import ObjectId
 
 def get_all_meeting_titles_and_ids():
+    if collection is None:
+        return []
     meetings = list(collection.find({}, {"analysis.meeting_name": 1, "_id": 1}))
     return [{"id": str(m["_id"]), "title": m.get("analysis", {}).get("meeting_name", "Unnamed Meeting")} for m in meetings]
 
 def get_all_meetings():
+    if collection is None:
+        return []
+        
     meetings = list(collection.find())
 
     for m in meetings:

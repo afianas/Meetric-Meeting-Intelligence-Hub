@@ -1,8 +1,10 @@
 from pymongo import MongoClient
 import os
 import certifi
+from dotenv import load_dotenv
 
-# 🔐 Load from env (or hardcode temporarily)
+load_dotenv()
+
 MONGO_URI = os.getenv("MONGO_URI")
 
 # 🚀 Robust MongoDB connection

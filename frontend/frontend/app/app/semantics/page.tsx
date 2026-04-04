@@ -1,96 +1,67 @@
 "use client"
 
 import { useState, useMemo } from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
-import { getSpeakerAnalytics, getSentimentFlow, getSentimentInsight, getMeetings, getInitials } from "@/lib/api"
-import { Sparkles, RefreshCw, MessageSquare, User, TrendingUp, Info, Activity, Zap } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { getSpeakerAnalytics, getSentimentFlow, getSentimentInsight, getMeetings } from "@/lib/api"
+import { RefreshCw } from "lucide-react"
 import { useQuery } from "@tanstack/react-query"
-import {
-  Radar, RadarChart, PolarGrid, PolarAngleAxis, ResponsiveContainer,
-  AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid
-} from "recharts"
-import Link from "next/link"
+import { ChartFlowSegment, FlowSegment, Meeting, AnalyticsResponse, FlowResponse, InsightResponse } from "./types"
+import { getEmotionWeight } from "./constants"
 
-function avatarFor(name: string) {
-  return null; // No human images
-}
-
-const EMOTIONS = ["agreement", "concern", "conflict", "uncertainty", "neutral"]
-const EMOTION_COLORS: Record<string, string> = {
-  agreement: "#15803d",
-  conflict: "#b91c1c",
-  concern: "#d97706",
-  uncertainty: "#7c3aed",
-  neutral: "#64748b"
-}
+import { HeroSplit } from "./components/HeroSplit"
+import { CollaboratorRadar } from "./components/CollaboratorRadar"
+import { ConversationFlow } from "./components/ConversationFlow"
+import { SynchronizedTimeline } from "./components/SynchronizedTimeline"
+import { DialogueExplorer } from "./components/DialogueExplorer"
+import { EmotionalFootprint } from "./components/EmotionalFootprint"
 
 export default function SpeakerIntelligencePage() {
   const [selectedMeetingId, setSelectedMeetingId] = useState<string>("all")
-  const [selectedSegment, setSelectedSegment] = useState<any>(null)
+  const [selectedSegment, setSelectedSegment] = useState<FlowSegment | null>(null)
 
   // Data Fetching
-  const { data: meetingsData } = useQuery({ queryKey: ["meetings"], queryFn: getMeetings })
-  const { data: analytics, isLoading: loadingStats, refetch: refetchStats } = useQuery({
+  const { data: meetingsData } = useQuery<Meeting[]>({ 
+    queryKey: ["meetings"], 
+    queryFn: getMeetings 
+  })
+  
+  const { data: analytics, isLoading: loadingStats, refetch: refetchStats } = useQuery<AnalyticsResponse>({
     queryKey: ["analytics", selectedMeetingId],
     queryFn: () => getSpeakerAnalytics(selectedMeetingId === "all" ? undefined : selectedMeetingId),
   })
-  const { data: flowData, isLoading: loadingFlow } = useQuery({
+  
+  const { data: flowData, isLoading: loadingFlow } = useQuery<FlowResponse>({
     queryKey: ["flow", selectedMeetingId],
     queryFn: () => getSentimentFlow(selectedMeetingId === "all" ? undefined : selectedMeetingId),
   })
-  const { data: insightData, isLoading: loadingInsight } = useQuery({
+  
+  const { data: insightData, isLoading: loadingInsight } = useQuery<InsightResponse>({
     queryKey: ["insight", selectedMeetingId],
     queryFn: () => getSentimentInsight(selectedMeetingId === "all" ? undefined : selectedMeetingId),
   })
 
-  const speakers = analytics?.speakers || []
-  const flow = flowData?.flow || []
+  // Derived Datasets via Memoization
+  const speakers = useMemo(() => analytics?.speakers || [], [analytics])
+  const flow = useMemo(() => flowData?.flow || [], [flowData])
 
-  // Dominant Tone Logic
   const dominantSentiment = useMemo(() => {
     if (flow.length === 0) return null;
     const counts: Record<string, number> = {};
-    flow.forEach(f => { counts[f.emotion] = (counts[f.emotion] || 0) + 1; });
-    return Object.entries(counts).sort((a, b) => b[1] - a[1])[0][0];
+    for (const f of flow) {
+      if (f.emotion) counts[f.emotion] = (counts[f.emotion] || 0) + 1;
+    }
+    const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1]);
+    return sorted.length > 0 ? sorted[0][0] : null;
   }, [flow]);
 
-  const dominantColor = useMemo(() => {
-    return EMOTION_COLORS[dominantSentiment || "neutral"] || "#94a3b8";
-  }, [dominantSentiment]);
-
-  // Transform radar data
-  const radarData = useMemo(() => {
-    return EMOTIONS.map(emotion => {
-      const entry: any = { emotion: emotion.toUpperCase() }
-      speakers.slice(0, 3).forEach(s => { entry[s.speaker] = s.emotion_distribution[emotion] || 0 })
-      return entry
-    })
-  }, [speakers])
-
-  // Transform flow data for chart
-  const chartFlow = useMemo(() => {
-    return flow.map((s, i) => ({
-      index: i,
-      val: s.emotion === "agreement" ? 10 : s.emotion === "conflict" ? -10 : s.emotion === "concern" ? -5 : s.emotion === "uncertainty" ? 5 : 0,
-      ...s
-    }))
-  }, [flow])
-
-  // Chronological Timeline Logic (Synchronized Grid)
-  const speakerTimelines = useMemo(() => {
-    const speakersList = Array.from(new Set(flow.map(f => f.speaker)));
-    const timelines: Record<string, (any | null)[]> = {};
-    speakersList.forEach(s => {
-      timelines[s] = new Array(flow.length).fill(null);
-    });
-    flow.forEach((f, i) => {
-      timelines[f.speaker][i] = f;
-    });
-    return timelines;
+  const chartFlow = useMemo<ChartFlowSegment[]>(() => {
+    return flow.map((s, index) => ({
+      ...s,
+      index,
+      val: getEmotionWeight(s.emotion)
+    }));
   }, [flow]);
 
   const isLoading = loadingStats || loadingFlow || loadingInsight
@@ -115,7 +86,9 @@ export default function SpeakerIntelligencePage() {
             <SelectContent className="rounded-xl border-border/60 shadow-2xl">
               <SelectItem value="all" className="font-medium">Unified Workspace Analytics</SelectItem>
               {meetingsData?.map(m => (
-                <SelectItem key={m._id} value={m._id} className="text-sm">{m.analysis.meeting_name}</SelectItem>
+                <SelectItem key={m._id} value={m._id} className="text-sm">
+                  {m.analysis?.meeting_name || "Unknown Meeting"}
+                </SelectItem>
               ))}
             </SelectContent>
           </Select>
@@ -130,339 +103,22 @@ export default function SpeakerIntelligencePage() {
         </div>
       </div>
 
-      {/* Hero Split Section: Insight vs Dominant Tone */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-        <Card className="lg:col-span-8 border-border/40 bg-background/40 backdrop-blur-md shadow-sm overflow-hidden relative group rounded-3xl flex items-center">
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_0%,var(--color-primary),transparent)] opacity-10" />
-          <CardContent className="p-8 md:p-10 relative w-full">
-            <div className="space-y-6">
-              <div className="inline-flex py-1 px-3 rounded-full bg-primary/10 text-primary text-[9px] font-bold uppercase tracking-widest border border-primary/20">
-                Executive Summary
-              </div>
-              <h2 className="text-xl md:text-2xl font-serif text-foreground leading-tight italic max-w-4xl">
-                "{insightData?.insight || "Generating psychological summary..."}"
-              </h2>
-            </div>
-          </CardContent>
-        </Card>
+      <HeroSplit insightData={insightData} dominantSentiment={dominantSentiment} />
 
-        <Card className="lg:col-span-4 border-border/40 bg-background/40 backdrop-blur-md shadow-sm rounded-3xl overflow-hidden relative group flex flex-col items-center justify-center p-8 text-center transition-all hover:border-primary/20">
-          <div className="absolute top-0 right-0 p-4">
-            <Zap className="h-5 w-5 text-primary opacity-20" />
-          </div>
-          <div className="space-y-6 w-full">
-            <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground/60">
-              Dominant Tone
-            </div>
-            {dominantSentiment ? (
-              <div className="space-y-4">
-                <div className="relative mx-auto w-24 h-24 flex items-center justify-center">
-                  <div className="absolute inset-0 rounded-full animate-ping opacity-20" style={{ backgroundColor: dominantColor }} />
-                  <div className="relative h-20 w-20 rounded-full shadow-2xl flex items-center justify-center border-4 border-background" style={{ backgroundColor: dominantColor }}>
-                  </div>
-                </div>
-                <div className="space-y-1">
-                  <div className="text-2xl font-sans font-black uppercase tracking-widest" style={{ color: EMOTION_COLORS[dominantSentiment] }}>
-                    {dominantSentiment}
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <div className="h-20 w-20 rounded-full bg-muted/20 animate-pulse mx-auto" />
-            )}
-          </div>
-        </Card>
-      </div>
-
-      {/* Dual Analytics Row */}
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
-        {/* Radar Map (40%) */}
-        <Card className="lg:col-span-2 border-border/40 shadow-sm transition-all hover:border-primary/10 rounded-3xl bg-background/40 backdrop-blur-sm">
-          <CardHeader className="p-8 pb-0">
-            <CardTitle className="text-xs font-bold uppercase tracking-[0.2em] text-muted-foreground flex items-center justify-between">
-              <span className="flex items-center gap-2">
-                <User className="h-4 w-4 text-primary" />
-                Collaborator Profile
-              </span>
-              <div className="h-2 w-2 rounded-full bg-primary animate-pulse" />
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="h-[400px] p-8 pt-0">
-            {speakers.length > 0 ? (
-              <ResponsiveContainer width="100%" height="100%">
-                <RadarChart data={radarData} margin={{ top: 20, right: 30, bottom: 20, left: 30 }}>
-                  <PolarGrid stroke="#e2e8f0" strokeDasharray="4 4" />
-                  <PolarAngleAxis dataKey="emotion" tick={{ fontSize: 10, fontWeight: 700, fill: "#64748b" }} />
-                  {speakers.slice(0, 3).map((s, i) => (
-                    <Radar key={s.speaker} name={s.speaker} dataKey={s.speaker}
-                      stroke={["#3b82f6", "#10b981", "#f59e0b"][i]} fill={["#3b82f6", "#10b981", "#f59e0b"][i]} fillOpacity={0.15} />
-                  ))}
-                  <Tooltip contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 30px rgba(0,0,0,0.1)' }} />
-                </RadarChart>
-              </ResponsiveContainer>
-            ) : (
-              <div className="flex items-center justify-center h-full text-muted-foreground italic text-sm">Waiting for profile data...</div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Chronological Flow (60%) */}
-        <Card className="lg:col-span-3 border-border/40 shadow-sm rounded-3xl bg-background/40 backdrop-blur-sm overflow-hidden flex flex-col">
-          <CardHeader className="p-8 pb-0">
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-xs font-bold uppercase tracking-[0.2em] text-muted-foreground flex items-center gap-2">
-                <TrendingUp className="h-4 w-4 text-primary" />
-                Conversation Flow Dynamics
-              </CardTitle>
-              <div className="flex gap-2">
-                {Object.entries(EMOTION_COLORS).slice(0, 2).map(([emo, color]) => (
-                  <Badge key={emo} variant="outline"
-                    className="text-[9px] font-sans font-bold uppercase tracking-widest border-none px-2 h-5 rounded-md"
-                    style={{ backgroundColor: `${color}15`, color }}>
-                    {emo}
-                  </Badge>
-                ))}
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent className="flex-1 p-0 mt-8 min-h-[320px]">
-            {flow.length > 0 ? (
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={chartFlow} margin={{ top: 0, right: 0, left: 0, bottom: 0 }}
-                  onClick={(e) => e?.activePayload && setSelectedSegment(e.activePayload[0].payload)}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                  <XAxis dataKey="index" hide />
-                  <YAxis hide domain={[-15, 15]} />
-                  <Tooltip
-                    cursor={{ stroke: 'var(--color-primary)', strokeWidth: 1.5, strokeDasharray: '4 4' }}
-                    content={({ active, payload }) => {
-                      if (active && payload?.[0]) {
-                        const d = payload[0].payload;
-                        return (
-                          <div className="bg-background/95 backdrop-blur-xl border border-border/40 p-4 rounded-xl shadow-lg max-w-[280px]">
-                            <div className="flex items-center gap-3 mb-2">
-                              <Avatar className="h-6 w-6 border border-border/40 bg-muted">
-                                <AvatarFallback className="text-[10px] font-bold text-muted-foreground">{getInitials(d.speaker)}</AvatarFallback>
-                              </Avatar>
-                              <span className="text-[10px] font-bold text-foreground truncate">{d.speaker}</span>
-                              <Badge
-                                style={{ backgroundColor: `${EMOTION_COLORS[d.emotion]}15`, color: EMOTION_COLORS[d.emotion] }}
-                                className="ml-auto text-[8px] border-none font-sans font-bold uppercase tracking-widest px-2 h-5 rounded-md"
-                              >
-                                {d.emotion}
-                              </Badge>
-                            </div>
-                            <p className="text-[11px] text-muted-foreground line-clamp-2 leading-relaxed font-medium italic">"{d.text}"</p>
-                          </div>
-                        );
-                      }
-                      return null;
-                    }}
-                  />
-                  <Area type="monotone" dataKey="val" stroke="var(--color-primary)" strokeWidth={3} fillOpacity={0.05} fill="var(--color-primary)"
-                    activeDot={{ r: 8, strokeWidth: 4, stroke: "white", fill: "var(--color-primary)" }} />
-                </AreaChart>
-              </ResponsiveContainer>
-            ) : (
-              <div className="flex items-center justify-center h-full text-muted-foreground italic">Analyze meetings to map flow dynamics.</div>
-            )}
-          </CardContent>
-          <div className="p-4 pt-0 border-t border-border/30 bg-muted/20 flex justify-center backdrop-blur-md text-center">
-            <p className="text-[10px] text-muted-foreground italic flex items-center gap-2 uppercase tracking-widest py-2">
-              <Info className="h-3 w-3 text-primary opacity-50" /> Select nodes to perform granular dialogue inspection
-            </p>
-          </div>
-        </Card>
+        <CollaboratorRadar speakers={speakers} />
+        <ConversationFlow chartFlow={chartFlow} setSelectedSegment={setSelectedSegment} />
       </div>
 
-      {/* Speaker Sentiment Timeline (Synchronized Global Logic) */}
-      <div className="space-y-4">
-        <div className="flex items-center justify-between px-2">
-          <h3 className="font-serif text-2xl flex items-center gap-3">
-            Sentiment Timeline
-            <Badge variant="outline" className="text-[9px] border-primary/20 text-primary/60 font-bold tracking-widest uppercase">Chronological Grid</Badge>
-          </h3>
-          <div className="flex items-center gap-4 text-[10px] font-bold text-muted-foreground/40 uppercase tracking-widest">
-            <span>{flow.length} segments</span>
-          </div>
-        </div>
+      <SynchronizedTimeline 
+        flow={flow} 
+        selectedSegment={selectedSegment} 
+        setSelectedSegment={setSelectedSegment} 
+      />
 
-        <div className="space-y-4 px-2">
-          {Object.entries(speakerTimelines).map(([speaker, slots]) => {
-            const speakCount = slots.filter(s => s !== null).length;
-            return (
-              <div key={speaker} className="flex items-center gap-6">
-                <div className="w-32 shrink-0 flex items-center gap-2">
-                  <Avatar className="h-5 w-5 border border-border/20 bg-muted">
-                    <AvatarFallback className="text-[8px] font-bold text-muted-foreground">{getInitials(speaker)}</AvatarFallback>
-                  </Avatar>
-                  <span className="text-[10px] font-bold uppercase tracking-widest text-foreground/70 truncate">{speaker}</span>
-                </div>
-
-                {/* Dynamic Global Grid - No background track */}
-                <div className="flex-1 flex h-2 items-center relative">
-                  {slots.map((seg, idx) => {
-                    if (!seg) return <div key={idx} className="flex-1 h-px bg-border/10" />; // Invisible gap for alignment
-
-                    return (
-                      <button
-                        key={`${seg.segment_id}-${idx}`}
-                        onClick={() => setSelectedSegment(seg)}
-                        className={`flex-1 h-2 cursor-pointer hover:scale-y-[3] hover:brightness-110 transition-all relative group z-10`}
-                        style={{
-                          backgroundColor: EMOTION_COLORS[seg.emotion] || "#94a3b8",
-                          opacity: selectedSegment?.segment_id === seg.segment_id ? 1 : 0.7
-                        }}
-                      >
-                        <div className={`absolute -top-1 left-0 right-0 h-0.5 bg-primary transition-transform origin-left ${selectedSegment?.segment_id === seg.segment_id ? "scale-x-100" : "scale-x-0 group-hover:scale-x-100"}`} />
-                      </button>
-                    );
-                  })}
-                </div>
-                <div className="w-24 text-right">
-                  <span className="text-[9px] font-bold text-muted-foreground/30 uppercase tracking-widest">{speakCount} contribs</span>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-
-        <div className="flex justify-center gap-x-8 pt-4 border-t border-border/10">
-          {Object.entries(EMOTION_COLORS).map(([emo, color]) => (
-            <div key={emo} className="flex items-center gap-2 group cursor-default">
-              <div className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: color }} />
-              <span className="text-[9px] font-sans font-bold uppercase tracking-widest text-muted-foreground/60 transition-colors group-hover:text-foreground" style={{ color }}>{emo}</span>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Interactive Detail Section: Explorer + Footprint Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 scroll-mt-24" id="dialogue-inspector">
-        {/* Dialogue Explorer (Drill-down) */}
-        <div className="lg:col-span-7 space-y-4">
-          <div className="flex items-center justify-between px-2">
-            <h3 className="font-serif text-2xl flex items-center gap-3">
-              Explorer
-              {selectedSegment && (
-                <Badge variant="outline" className="text-[9px] font-bold text-primary px-2 py-0.5 rounded-full bg-primary/10 border-primary/20 animate-pulse tracking-widest uppercase">
-                  Selected
-                </Badge>
-              )}
-            </h3>
-            <div className="h-9 w-9 rounded-xl bg-background/50 border border-border/40 flex items-center justify-center text-primary shadow-sm backdrop-blur-sm">
-              <MessageSquare className="h-4 w-4" />
-            </div>
-          </div>
-
-          {selectedSegment ? (
-            <Card className="border-border/40 bg-background/40 backdrop-blur-md shadow-sm rounded-3xl overflow-hidden relative animate-in zoom-in-95 duration-500 hover:border-primary/20 transition-all">
-              <CardContent className="p-8 space-y-8">
-                <div className="flex items-start justify-between">
-                  <div className="flex items-center gap-6">
-                    <Avatar className="h-16 w-16 border-2 border-background shadow-xl shrink-0 bg-muted">
-                      <AvatarFallback className="text-xl font-bold text-muted-foreground">{getInitials(selectedSegment.speaker)}</AvatarFallback>
-                    </Avatar>
-                    <div className="space-y-1.5 min-w-0">
-                      <p className="text-2xl font-serif text-foreground truncate">
-                        {selectedSegment.speaker}
-                      </p>
-                      <div className="flex items-center gap-3">
-                        <Badge
-                          style={{ backgroundColor: `${EMOTION_COLORS[selectedSegment.emotion]}15`, color: EMOTION_COLORS[selectedSegment.emotion] }}
-                          className="text-[10px] font-sans font-bold uppercase tracking-widest border-none px-3 h-7 rounded-lg"
-                        >
-                          {selectedSegment.emotion}
-                        </Badge>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="flex gap-2">
-                    <Button asChild variant="outline" size="sm" className="h-9 px-4 rounded-xl border-border/60 hover:bg-primary/5 hover:text-primary hover:border-primary/20 shadow-sm transition-all group">
-                      <Link href={`/app/transcripts?id=${selectedSegment.meeting_id}&segment=${selectedSegment.segment_id}`} className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest">
-                        <TrendingUp className="h-3.5 w-3.5 opacity-50 group-hover:opacity-100" /> Inspect
-                      </Link>
-                    </Button>
-                    <Button variant="ghost" size="icon" onClick={() => setSelectedSegment(null)} className="h-9 w-9 rounded-xl text-muted-foreground hover:bg-background/80 hover:text-primary">
-                      <RefreshCw className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-
-                <div className="relative">
-                  <div className="p-8 rounded-2xl bg-background/60 shadow-lg border border-border/10 text-foreground text-xl md:text-2xl leading-relaxed font-serif italic relative overflow-hidden group/quote">
-                    <div className="absolute top-0 left-0 w-1.5 h-full bg-primary/30 group-hover/quote:bg-primary transition-all duration-700" />
-                    <span className="absolute -top-6 -left-3 text-9xl text-primary/5 select-none font-serif italic">“</span>
-                    <p className="relative z-10 text-foreground/90">
-                      {selectedSegment.text}
-                    </p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ) : (
-            <Card className="border-dashed border-border/40 bg-background/20 backdrop-blur-sm rounded-3xl py-16 px-8 text-center group transition-all hover:bg-background/40 hover:border-primary/10">
-              <div className="flex flex-col items-center gap-6">
-                <div className="h-16 w-16 rounded-2xl bg-muted/10 border border-border/20 shadow-xl flex items-center justify-center relative rotate-2 group-hover:rotate-0 transition-all duration-700">
-                  <MessageSquare className="h-7 w-7 text-muted-foreground/30" />
-                  <div className="absolute -top-2 -right-2 h-5 w-5 rounded-full bg-primary/20 flex items-center justify-center shadow-lg">
-                    <Sparkles className="h-2.5 w-2.5 text-primary animate-pulse" />
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <p className="text-2xl font-serif font-black text-foreground/40">Select a dialogue segment</p>
-                  <p className="text-[10px] text-muted-foreground/60 leading-relaxed font-bold uppercase tracking-[0.2em]">
-                    to reveal psychological subtext and core quotes.
-                  </p>
-                </div>
-              </div>
-            </Card>
-          )}
-        </div>
-
-        {/* Detailed Emotional Footprint */}
-        <div className="lg:col-span-5 space-y-4">
-          <h3 className="font-serif text-xl px-2">Emotional Footprint</h3>
-          <div className="space-y-4">
-            {speakers.slice(0, 3).map(s => (
-              <Card key={`footprint-${s.speaker}`} className="border-border/30 bg-card/10 backdrop-blur-md rounded-2xl overflow-hidden shadow-none hover:shadow-sm transition-all hover:border-border/50">
-                <CardContent className="p-4 space-y-4">
-                  <div className="flex items-center gap-3">
-                    <Avatar className="h-10 w-10 border-2 border-background shadow-md bg-muted">
-                      <AvatarFallback className="font-bold text-muted-foreground">{getInitials(s.speaker)}</AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <p className="text-sm font-serif font-black text-foreground leading-none mb-1">{s.speaker}</p>
-                      <p className="text-[9px] font-bold text-primary/40 uppercase tracking-widest">Narrative Profile</p>
-                    </div>
-                    <div className="ml-auto text-[10px] font-serif font-black text-primary/5 italic select-none">
-                      #{(speakers.indexOf(s) + 1).toString().padStart(2, '0')}
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-x-4 gap-y-2">
-                    {Object.entries(s.emotion_distribution)
-                      .sort((a: any, b: any) => b[1] - a[1])
-                      .slice(0, 4)
-                      .map(([emo, pct]) => (
-                        <div key={emo} className="space-y-1">
-                          <div className="flex items-center justify-between text-[9px] font-sans font-bold uppercase tracking-widest">
-                            <span style={{ color: EMOTION_COLORS[emo] }}>{emo}</span>
-                            <span className="text-primary/70">{pct}%</span>
-                          </div>
-                          <div className="h-1 w-full rounded-full bg-muted/20 overflow-hidden shadow-inner">
-                            <div
-                              className="h-full transition-all duration-1000 ease-out"
-                              style={{ width: `${pct}%`, backgroundColor: EMOTION_COLORS[emo] }}
-                            />
-                          </div>
-                        </div>
-                      ))}
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
+        <DialogueExplorer selectedSegment={selectedSegment} setSelectedSegment={setSelectedSegment} />
+        <EmotionalFootprint speakers={speakers} />
       </div>
     </div>
   )
