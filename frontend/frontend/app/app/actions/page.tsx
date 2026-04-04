@@ -19,7 +19,7 @@ export default function ActionTrackerPage() {
   })
 
   const items = useMemo(() => {
-    return (meetings as BackendMeeting[]).flatMap(m => 
+    return (meetings as BackendMeeting[]).flatMap(m =>
       (m.analysis?.action_items || []).map((item, idx) => normalizeActionItem(item, idx, m._id, m.analysis?.meeting_name || "Unknown"))
     )
   }, [meetings])
@@ -49,7 +49,7 @@ export default function ActionTrackerPage() {
   }, [items])
 
   const toggleMutation = useMutation({
-    mutationFn: ({ meetingId, taskId, status }: { meetingId: string, taskId: number, status: string }) => 
+    mutationFn: ({ meetingId, taskId, status }: { meetingId: string, taskId: number, status: string }) =>
       updateTaskStatus(meetingId, taskId, status),
     onSuccess: (_, req) => {
       queryClient.invalidateQueries({ queryKey: ['meetings'] })
@@ -92,11 +92,11 @@ export default function ActionTrackerPage() {
 
       <div />
 
-      {/* Progress */}
+      {/* Sprint Progress */}
       <Card>
         <CardContent className="p-6">
           <div className="flex items-center justify-between">
-            <h2 className="font-serif text-xl font-semibold text-foreground">Progress</h2>
+            <h2 className="font-serif text-xl font-semibold text-foreground">Sprint Progress</h2>
             <span className="text-sm text-muted-foreground">{stats.done} of {stats.total} complete</span>
           </div>
           <Progress value={stats.progress} className="mt-4 h-3 transition-all" />
@@ -137,7 +137,7 @@ export default function ActionTrackerPage() {
             const isToggling = toggling === key
             // Optimistic check: if toggling, assume the opposite of current state for visual feedback
             const isVisuallyDone = isToggling ? !item.completed : item.completed
-            
+
             return (
               <Card key={key} className={`transition-all hover:shadow-md ${isVisuallyDone ? "opacity-60 bg-muted/20" : ""}`}>
                 <CardContent className="flex items-center justify-between p-4">
@@ -161,14 +161,14 @@ export default function ActionTrackerPage() {
                       <p className={`text-xs ${isVisuallyDone ? "line-through text-muted-foreground/50" : "text-muted-foreground"}`}>{isVisuallyDone ? "COMPLETED" : "DUE DATE"}</p>
                       <p className={`text-sm font-medium ${isVisuallyDone ? "line-through text-muted-foreground/70" : "text-primary"}`}>{item.dueDate}</p>
                     </div>
-                    <Button 
-                      variant="ghost" 
-                      size="icon" 
-                      className="h-10 w-10 rounded-full hover:bg-primary/5 transition-all group" 
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-10 w-10 rounded-full hover:bg-primary/5 transition-all group"
                       onClick={(e) => {
                         e.stopPropagation();
                         handleToggle(item);
-                      }} 
+                      }}
                       disabled={isToggling}
                       title={item.completed ? "Mark as pending" : "Mark as completed"}
                     >

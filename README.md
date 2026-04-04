@@ -1,285 +1,244 @@
-## Meeting Intelligence Hub
-> An AI-powered meeting intelligence platform that converts raw transcripts into decisions, tasks, and searchable insights using a custom RAG pipeline.
+# Meetric Intelligence Hub
 
-## 🎥 Demo Video
-[![Meeting Intelligence Hub Demo](https://img.shields.io/badge/Demo-Watch%20Video-red?style=for-the-badge&logo=youtube)](https://drive.google.com/file/d/1HaxOBSXsASlW4IjiKtKmesqKk9N0GNvs/view?usp=drivesdk)
----
-
-## 1. Project Overview
-**Problem:** Meetings are unstructured, time-consuming, and difficult to track. Important decisions often get buried in lengthy transcripts, and action items are frequently lost or forgotten.
-
-**Solution:** The Meeting Intelligence Hub converts these raw conversations into structured, actionable intelligence. It provides visibility into what was decided, who is responsible for next steps, and allows users to query their meeting history with high factual accuracy.
-
-**Key Capabilities:**
-- **Automated Intelligence:** Extracts structured decisions and action items (Who, What, By When) using Llama 3.3-70B.
-- **Conversational Search:** A custom RAG-based chatbot with semantic search for meeting-wide and cross-meeting queries with citations.
-- **Speaker Intelligence**: Professional-grade dashboard with emotional footprinting (Radar charts) and chronological sentiment flow (Area charts).
-- **Interactive Traceability**: Clickable timeline nodes that reveal the exact transcript dialogue (Dialogue Inspector) with deep-links to full context.
-- **Natural Language Insights**: Automatic 1-line generation of the conversation's "emotional temperature" (e.g., "Mostly collaborative with brief technical conflict").
-- **Execution Layer:** A live action tracker to manage and complete extracted tasks.
-- **Exporting**: Integrated CSV and PDF export for decisions and action items.
+> Meetric Intelligence Hub: Turn Hours Of Dialogue Into Minutes Of Clarity
 
 ---
 
-### 🌐 Global & Multi-Meeting Intelligence
-The RAG engine is equipped with **Diversity-Aware Retrieval** to ensure that workspace-wide queries (e.g., "trends across all meetings") provide a balanced perspective.
-- **Intent Detection**: Automatically distinguishes between "Focused" (single-meeting) and "Global" (cross-meeting) queries.
-- **Deep Discovery**: Global queries utilize a enlarged **100-segment candidate pool** to ensure evidence from smaller meetings is not crowded out by larger ones.
-- **Diversity Sampling**: Instead of retrieval being dominated by a single similar meeting, the system groups candidates and ensures representative evidence from every relevant meeting is included in the AI's context.
-- **Adaptive Context Window**: Dynamically scales from 10 segments (Focused) to **15 diverse segments** (Global) for comprehensive cross-meeting synthesis.
-
-
-## 2. Tech Stack
-- **Backend:** FastAPI (Python)
-- **Frontend:** Next.js (App Router, Tailwind/Vanilla CSS) with TanStack Query for state management
-- **Database:** MongoDB (Persistent storage for metadata and segments)
-- **Vector Store:** FAISS (Local in-memory indexing for semantic search)
-- **Embeddings:** `all-MiniLM-L6-v2` (384-dimension sentence embeddings)
-- **Reranker:** `BAAI/bge-reranker-base` (Cross-Encoder for high-precision retrieval)
-- **LLM:** Llama 3.3-70B via Groq (For extraction and RAG generation)
-- **Emotion Model:** `distilbert-base-uncased` fine-tuned on Saravia Emotion Dataset
+## 🎥 Project Demonstration
+[![Meetric Intelligence Hub Showcase](https://img.shields.io/badge/Project-Showcase-red?style=for-the-badge&logo=youtube)](https://drive.google.com/file/d/1HaxOBSXsASlW4IjiKtKmesqKk9N0GNvs/view?usp=drivesdk)
 
 ---
 
-## 3. Features 
-### Decision and Action Item Extractor
-Uses Llama 3.3-70B with highly structured prompting to parse raw transcripts. It identifies:
-- **Decisions:** Key agreements and strategic shifts.
-- **Action Items:** Structured tasks including **Responsible Person**, **Task Description**, and **Deadline/Date**.
-This moves the system from "simple text storage" to "structured intelligence." Results are presented in a clean, readable table with an integrated export option.
+## Project Title
+**Meetric Intelligence Hub: Turn Hours Of Dialogue Into Minutes Of Clarity**
 
-### Meeting Management & Grouping
-A comprehensive and interactive archive of all processed transcripts. 
-- **Flexible Grouping:** Dynamically group your meetings chronologically (by date) or thematically (by project/meeting name) via seamless client-side filtering.
-- **Single Meeting Deletion:** Clean up your workspace by permanently deleting individual meetings with a single click.
-- **Clear All Workspaces:** Reset your environment with a safe, confirmed "Clear All" action.
-- **Real-time UI Synchronization:** Fully integrated with TanStack Query and backend mutations, ensuring instant, layout-shift-free updates across the dashboard.
+---
 
-### Action Item Tracking
-An execution layer that converts extracted action items into a managed state. Users can mark tasks as completion, providing a closed-loop system for meeting outcomes.
+## The Problem
+Meetings generate massive amounts of unstructured dialogue. Critical decisions and follow-up tasks are frequently lost in lengthy transcripts, while searching for specific insights across multiple historical sessions remains a manual and inaccurate process. This leads to information silos and decreased organizational accountability.
 
-### Operational Efficiency: Accurate Task Tracking
-The system maintains real-time task state synchronization by distinguishing between pending and completed action items. Aggregated metrics are derived dynamically to reflect actionable workload across meetings.
+---
 
-### Visualization Stability
-The visualization layer is optimized for cross-device compatibility by reducing shader complexity and ensuring fallback-safe rendering.
+## The Solution
+**Meetric Intelligence Hub** is a technical solution for converting dialogue into structured insights. By treating every transcript segment as a discrete data point, the system enables precise retrieval and automated intelligence extraction.
 
-### RAG Chatbot
-A Retrieval-Augmented Generation pipeline using FAISS over semantic segments. It includes source attribution, allowing users to see exactly which parts of the meeting the AI is referencing.
-- **Scoped Chat:** Narrowly focused on a single meeting for high precision.
-- **Global Chat:** Cross-meeting intelligence for broad workspace queries.
+### **Core Philosophy / Approach: Grounded Retrieval**
+The system is designed for **Traceability**. Unlike standard large language model (LLM) interfaces that may hallucinate summaries, Meetric ensures that every answer is grounded in specific transcript segments. Users can verify any AI claim by clicking a citation that deep-links directly to the source text.
 
-### Speaker Intelligence Dashboard
-A high-fidelity visualization layer for behavioral analysis.
-- **Emotional Footprint (Radar)**: Compare the "personality" of speakers across the workspace or a specific meeting (e.g., Identifying the most critical vs. most collaborative participants).
-- **Sentiment Flow Timeline**: A chronological map of the conversation's emotional shifts. Click any data node to inspect the underlying dialogue.
-- **Dialogue Inspector**: A side-panel detail view providing the exact text, speaker role, and confidence score for any sentiment data point.
-- **Contextual Navigation**: Jump directly from a sentiment node in the dashboard to the specific moment in the full transcript viewer.
-- **Insight Hero**: A 1-line natural language summary generated for each meeting or unified workspace view.
+### **🚀 Automated Intelligence Extraction**
+- **Decision Capture**: Identifies strategic agreements via **Llama-3.3-70B** JSON-formatted extraction focused on consensus nodes.
+- **Action Tracker**: Maps tasks to owners and deadlines using LLM-extracted structured objects with **MongoDB** persistence.
+- **Formatted Export**: Dynamic report generation across **CSV and PDF** formats based on real-time extraction data.
 
-### Explainable AI & Source Traceability
-Every AI response generated by the RAG pipeline is backed by interactive, traceable evidence. 
-- **Human-Readable Citations:** AI answers include source attribution grouped by **Meeting Title** (or Meeting ID fallbacks) for immediate clarity.
-- **"Show Evidence" Interaction:** To keep conversations focused, high-precision source cards are hidden by default and accessible via a single click.
-- **Direct Transcript Navigation:** Clicking a source card takes the user directly to the exact moment in the meeting transcript.
-- **Context-Aware Highlighting:** The system preserves conversational context by highlighting the target segment along with surrounding dialogue (±2 segments).
-- **Visual Evidence Pulse:** A temporary visual "pulse" guides the user's eye to the specific evidence referenced by the AI.
-- **Emotion-Aware Citations:** Sources include detected emotions and speaker roles, providing deeper subtext for every citation.
+### **📊 Speaker Intelligence & Analytics**
+- **Behavioral Radar**: Aggregates speaker behaviors using **DistilBERT**-based emotion classification across dialogue segments.
+- **Synchronized Timeline**: Plotted with **Recharts** to visualize chronological emotional shifts, linked directly to transcript nodes.
+- **Speaker Profiling**: Normalized behavioral aggregation across multiple meetings to identify communication trends over time.
+- **Sentiment Insights**: Rule-based one-line summary generation based on dominant emotion spikes throughout the session.
+
+### **🧠 Advanced RAG Chatbot & UI Widget**
+- **Scoped Search**: Metadata filtering (meeting-id) on the **FAISS index** to restrict retrieval results to a single transcript.
+- **Global Search**: **Diversity-Aware Sampling** algorithm used to gather evidence from multiple meetings in the workspace.
+- **Persistent Access**: A dedicated **Glassmorphic React Component** widget used for context-aware Q&A across the platform.
+- **Evidence Documentation**: Source mapping using segment-id deep-links for **100% provenance verification**.
+
+### **⚙️ Workspace Management**
+- **Dynamic Grouping**: JavaScript-based grouping (Date/Project) on the frontend for organized archive navigation.
+- **Multi-Format Ingestion**: Custom parsers for **WebVTT (.vtt)** and plain text (.txt) file structures.
+- **Task Lifecycle**: **React Query** mutation logic used to sync task completion status between the UI and database.
+- **Global Reset**: CRUD operations in MongoDB combined with **FAISS index resets** for environment cleanup.
+
+### **🛡️ Contextual Validation**
+- **Deep-Linking**: Index-based transcript navigation logic providing (±2) surrounding context segments.
+- **Visual Pulse**: CSS-animated "pulse" triggered by citation navigation to guide the user's eye to target evidence.
 
 ---
 
 ## 4. System Architecture
-The architecture is designed to decouple **Intelligence Extraction** from the **In-Memory Retrieval** layer for ultra-low latency performance.
+
+Meetric is architected for **Low Latency** and **Data Privacy**.
 
 ```mermaid
 graph TD
-  A[React Frontend] --> B[FastAPI Backend]
-  B --> C[MongoDB]
+  A[Next.js Dashboard] --> B[FastAPI Backend]
+  B --> C[(MongoDB)]
   B --> D[FAISS Vector Index]
-  B --> E[LLM via Groq]
-  D --> F[BGE Reranker]
-  F --> E
+  D --> E[BGE Reranker]
+  E --> F[Llama 3.3-70B via Groq]
+  B --> G[DistilBERT Emotion Model]
+  F --> A
 ```
 
-- **Execution Layer:** Manages meeting lifecycle and persistent task completion states.
-- **Explainability Layer:** Corelates LLM reasoning with raw transcript indices for source verification.
+### **Component Walkthrough**
+1. **Ingestion Service**: Parses incoming transcripts, performs segmentation, and runs behavioral analysis via the Emotion Model.
+2. **Persistence Layer**: Stores raw segments and metadata in MongoDB, while indexing vectors in **FAISS** for millisecond-scale retrieval.
+3. **Inference Pipeline**: Orchestrates the reranking and generation logic using high-speed LLM infrastructure.
 
 ---
 
-## 5. Application Flow
-1.  **Dashboard Home:** Landing page displaying quick stats (transcript count, total action items, overall sentiment).
-2.  **Meeting History:** Access a full repository of past meetings, grouped by date or recurring meeting name for easy retrieval.
-3.  **Upload:** User uploads one or multiple `.txt` or `.vtt` transcripts via a drag-and-drop portal.
-4.  **Processing:** LLM extracts structured data (decisions, action items) and partitions the transcript into semantic segments.
-5.  **Analysis:** Emotion analysis is performed per segment; decisions are matched to evidence segments for traceability.
-6.  **Embedding:** Segments are converted into 384-dim vectors via local MiniLM.
-7.  **Storage:** Metadata and segments are saved to MongoDB; vectors are indexed into FAISS.
-8.  **Retrieval:** Chat queries perform a hybrid search (FAISS + BGE Rerank).
-9.  **Generation:** Groq LLM synthesizes an answer using the retrieved, high-quality context.
+## 5. Technical Implementation: The RAG Pipeline
+
+A 7-step process ensures factual accuracy in every response:
+1. **Query Scoping**: Detects if the user is targeting a specific meeting or the entire workspace.
+2. **Candidate Retrieval**: FAISS retrieves the top 100 most similar segments using vector similarity.
+3. **Cross-Encoder Reranking**: Re-scores these 100 segments using `BAAI/bge-reranker-base` to account for complex semantic relationships.
+4. **Diversity Sampling**: Ensures evidence is gathered from multiple relevant meetings rather than just the most verbose one.
+5. **Context Assembly**: The most relevant segments are formatted into a prompt with unique segment IDs.
+6. **Strict Generation**: The LLM is instructed to answer only based on the provided context with mandatory citations.
+7. **Metadata Mapping**: Citations are linked back to the original database records for frontend interaction.
 
 ---
 
-## 6. Reranking & RAG Pipeline
-RAG (Retrieval-Augmented Generation) is used to ground LLM responses in real meeting data, **preventing hallucinations** and ensuring factual accuracy.
+## 6. Technical Rationale
 
-**The Hybrid Retrieval Process:**
-1.  **FAISS Search:** Retrieves top 100 candidate segments based on approximate semantic similarity (Bi-Encoder). This deep search ensures broad discovery across even the largest transcript repositories.
-2.  **BGE Reranking:** Re-evaluates candidates through a Cross-Encoder model. The system then applies **Diversity Sampling**, ensuring the final context represents as many unique meetings as possible.
-3.  **Analysis Scope Visibility:** Instead of abstract percentages, the system provides a dynamic **"Analyzing N meetings"** badge. This transparency-first approach ensures users understand the breadth of information used to generate the answer.
-4.  **Prompt Construction:** The top 10 (Focused) to 15 (Global) segments are injected into the LLM prompt as the "Source of Truth."
+- **FAISS vs. Cloud Vector DBs**: Local FAISS indexing was chosen to minimize network latency and ensure that workspace data remains within the local infrastructure.
+- **Cross-Encoder vs. Bi-Encoder**: While Bi-Encoders are fast for initial search, Cross-Encoders provide superior accuracy by analyzing the query and target text together, which is critical for legal or project-critical dialogue.
+- **FastAPI / Next.js**: The stack was chosen for its asynchronous capabilities (FastAPI) and superior state management (TanStack Query/Next.js) to provide a zero-latency user experience.
 
 ---
 
-## 7. Project Structure
+## 7. Design & Interaction
+The interface follows a **Minimalist Analytical** design:
+- **Glassmorphic Depth**: Layers of information are separated using subtle transparency and blur effects for visual hierarchy.
+- **Synchronized State**: Filter selections (Speakers, Meetings, Dates) update all visualizations across the dashboard simultaneously without page reloads.
+- **Editorial Legibility**: Typography is optimized for long-form reading, with clear distinctions between transcript text and analytical data.
+
+---
+
+## Tech Stack
+
+Listing the core technologies used to build the Meetric Intelligence Hub:
+
+- **Programming Languages**
+  - **Python 3.10+**: Core backend logic, extraction services, and AI orchestration.
+  - **TypeScript / JavaScript**: Multi-threaded frontend state management and visualization.
+
+- **Frameworks**
+  - **FastAPI**: Asynchronous Python API framework for high-concurrency request handling.
+  - **Next.js 14.2 (App Router)**: Modern React framework for the dashboard interface.
+  - **Tailwind CSS**: Utility-first styling for the analytical interface.
+  - **TanStack Query (v5)**: Real-time server-state synchronization.
+
+- **Databases**
+  - **MongoDB**: Persistent document store for transcript metadata and intelligence objects.
+  - **FAISS (Local CPU)**: Vector engine utilizing IVF-Flat indexing for millisecond-scale retrieval.
+
+- **APIs or Third-Party Tools**
+  - **Groq API (Llama 3.3-70B)**: High-speed inference for RAG and extraction.
+  - **BGE-Reranker**: Cross-Encoder model for second-stage ranking precision.
+  - **DistilBERT Emotion**: Pre-trained transformer for behavioral mapping.
+  - **Hugging Face Transformers**: Library for local embedding and emotion model local execution.
+
+### **Development & Deployment**
+- **Environment**: Dotenv-based configuration for secure key management (`MONGO_URI`, `GROQ_API_KEY`).
+- **Data Integrity**: **Pydantic v2** for strict request/response validation and schema enforcement.
+
+---
+
+## Setup Instructions
+
+Provide the step-by-step commands to install dependencies and run the project locally.
+
+### **1. Install Dependencies**
+
+**Backend Installation:**
+```bash
+cd backend
+python -m venv venv
+source venv/bin/activate  # Windows: .\venv\Scripts\activate
+pip install -r requirements.txt
+```
+
+**Frontend Installation:**
+```bash
+cd frontend/frontend
+npm install
+```
+
+### **2. Setup Environment**
+
+Configure your `.env` file in the `backend/` directory:
+```env
+MONGO_URI=your_mongodb_connection_string
+GROQ_API_KEY=your_groq_api_key
+```
+
+### **3. Run the Project Locally**
+
+**Start Backend Server:**
+```bash
+# In backend directory
+uvicorn app.main:app --reload
+```
+
+**Start Frontend Application:**
+```bash
+# In frontend/frontend directory
+npm run dev
+```
+
+---
+
+## Design & Interaction
+The interface follows a **Minimalist Analytical** design:
+- **Glassmorphic Depth**: Layers of information are separated using subtle transparency and blur effects for visual hierarchy.
+- **Synchronized State**: Filter selections (Speakers, Meetings, Dates) update all visualizations across the dashboard simultaneously without page reloads.
+- **Editorial Legibility**: Typography is optimized for long-form reading, with clear distinctions between transcript text and analytical data.
+
+---
+
+## API Documentation
+Listing all backend endpoints available for workspace orchestration and intelligence retrieval:
+
+### **Ingestion & Data Lifecycle**
+- `POST /upload`: Multipart-form upload for `.vtt` and `.txt` transcripts. Initiates automated extraction and behavioral analysis.
+- `GET /meetings`: Retrieves the complete archive of meeting metadata and summary analytics.
+- `DELETE /meetings/{id}`: Permanently removes a specific meeting, its segments, and its vector indices from the workspace.
+- `DELETE /meetings`: A global "Clear All" action for environment reset.
+
+### **Intelligence & Search**
+- `GET /chat`: Scoped RAG Q&A with clickable citations and diversity-aware global retrieval.
+- `GET /search`: Keyword-based analysis search across stored transcripts.
+- `GET /semantic-search`: High-precision vector similarity search using FAISS retrieval.
+
+### **Analytics & Insights**
+- `GET /speaker-analytics`: Behavioral profiling distribution for per-speaker consensus mapping.
+- `GET /sentiment-flow`: Chronological mapping of sentiment-tagged segments for UI timeline plotting.
+- `GET /sentiment-insight`: Automated rule-based dominant behavior summary (e.g., "High Consensus").
+
+### **Tasks & Action Items**
+- `POST /update-task`: Synchronizes the completion status of AI-extracted action items between the AI and Database.
+- `GET /download`: Export capability for Decisions and Action Items in **CSV or PDF** formats.
+
+---
+
+## App Structure
 ```text
 backend/
-  app/
-    routes/       # API endpoints (Upload, Chat, Tasks, Analytics)
-    services/     # Core logic (LLM, Embedding, Vector, Reranker, Storage)
-    db/           # Database connection & shared collections
-    main.py       # Application entry point & startup vector sync
+  routes/       # API endpoints (Upload, Chat, Analytics, Tasks)
+  services/     # AI Pipeline logic (RAG, Extraction, Emotion)
+  db/           # Shared database collections
 frontend/
   src/
-    components/   # Reusable UI (Chat, Task Cards, Analytics Gauges)
-    pages/        # Feature views (Dashboard, Query Engine, Action Tracker)
-    utils/        # API Client and data mapping logic
+    components/   # Dashboard widgets (Radar, Timelines, Chat)
+    pages/        # Feature views (Actions, Decisions, Semantics)
+    lib/          # API client and utility logic
 ```
 
 ---
 
-## 8. API Documentation
-
-### Ingestion APIs
-**POST `/upload`**
-- **Purpose:** Processes transcripts, generates extraction, and calculates word counts/speaker identifies.
-- **Request:** `Multipart/form-data` with `file` (supports `.txt`, `.vtt`).
-- **Response:**
-  ```json
-  { "id": "mid", "word_count": 1200, "speakers_identified": 3, "analysis": { ... } }
-  ```
-
-### Query & Search APIs
-**GET `/chat`**
-- **Purpose:** Context-aware Q&A across transcripts with citations.
-- **Params:** `query` (string), `meeting_id` (optional).
-
-**GET `/meetings`**
-- **Purpose:** Retrieve all indexed meetings and their summary metadata.
-
-**GET `/search`**
-- **Purpose:** Classic keyword search across transcript analysis fields.
-
-**GET `/semantic-search`**
-- **Purpose:** Vector-based search for relevant meetings based on query meaning.
-
-### Analytics & Reporting APIs
-**GET `/speaker-analytics`**
-- **Purpose:** Per-speaker sentiment distribution. Supports optional `meeting_id`.
-
-**GET `/sentiment-flow`**
-- **Purpose:** Chronological export of emotion-tagged segments for timeline plotting.
-
-**GET `/sentiment-insight`**
-- **Purpose:** Generates a 1-line natural language summary of the meeting's emotional tone.
-
-**POST `/download?format=csv` (or `pdf`)**
-- **Purpose:** Generates a downloadable CSV/PDF of decisions and action items.
-
-### Action APIs
-**POST `/update-task`**
-- **Purpose:** Synchronizes task completion status between UI and DB.
+## Demo Flow
+1. **Ingestion**: Drop a `.vtt` file to initiate the "Hot-Extract" pipeline.
+2. **Behavior Analysis**: View the **Collaborator Radar** to assess team dynamics.
+3. **Timeline Inspection**: Use the **Dialogue Inspector** to drill down into specific sentiment nodes.
+4. **Global Query**: Use the persistent **AI Widget** to ask cross-meeting questions.
+5. **Report Generation**: Export the action items and decision items as a finalized CSV document.
 
 ---
 
-## 9. Data Flow (Detailed Step-by-Step)
-1. **User Uploads** transcript file.
-2. **LLM Extracts** structured JSON containing decisions and action items.
-3. **Segmentation** splits transcript into small, searchable chunks.
-4. **Embedding Generator** creates vectors for each chunk.
-5. **FAISS Addition** indexes segments into the local RAM store.
-6. **MongoDB Entry** creates the persistent record for the meeting.
-7. **Chat Query** triggers: `Embed -> Top-100 FAISS -> Top-5 Rerank -> LLM Response`.
+## Future Roadmap: Scaling to Production
 
----
-
-## 10. Design Decisions & Trade-offs
-- **FAISS vs. Pinecone:** Chose local FAISS for this version to minimize latency and architectural complexity. It provides high-speed vector search without the overhead of cloud synchronization for smaller individual workspaces.
-- **DistilBERT vs. RoBERTa:** Selected DistilBERT (fine-tuned on GoEmotions) for sentiment analysis because it is significantly faster and more lightweight than RoBERTa, enabling efficient per-segment classification without delaying the upload pipeline.
-- **Groq Integration:** Utilized Groq for Llama 3.3 models to achieve near-instantaneous inference for the RAG pipeline, overcoming the traditional latency bottleneck of high-parameter LLMs.
-
----
-
-## 11. Technical Details: Emotion Normalization
-The system performs a **Domain-Specific Normalization** to translate raw psychological emotions into professional meeting behaviors.
-
-| Raw Sentiment (Saravia) | Meeting Intelligence Label | Professional Rationale |
-| :--- | :--- | :--- |
-| **Joy / Love** | ✅ Agreement | Indicates consensus, positive feedback, or approval. |
-| **Sadness / Fear** | ⚠️ Concern | Tracks potential project risks, blockers, or hesitation. |
-| **Anger** | 🚩 Conflict | Highlights friction points, strong disagreement, or tension. |
-| **Surprise** | ❓ Uncertainty | Identifies where clarification or further detail is requested. |
-| **Neutral** | ⚪ Neutral | Standard informational or procedural dialogue. |
-
-This mapping Layer ensures that the AI's "emotional temperature" metrics are actionable for project managers rather than purely psychological.
-
----
-
-## 12. Safety & Privacy
-- **Context Guardrails:** LLM prompts are strictly bound to the retrieved transcript context to prevent hallucinations.
-- **Isolation/Scoped Chat:** Meeting-scoped chat prevents cross-meeting data leakage by restricting the FAISS search space via `meeting_id`.
-- **Safe Fallbacks:** If no relevant context meets the similarity threshold, the system provides a graceful "Information not found" response instead of guessing.
-
----
-
-## 12. Setup Instructions
-### Prerequisites
-- Python 3.10+
-- Node.js & npm
-- MongoDB URI
-- Groq API Key
-
-### Backend Setup
-1. `cd backend`
-2. `pip install -r requirements.txt`
-3. Create `.env` file:
-   ```env
-   MONGO_URI=your_mongodb_uri
-   GROQ_API_KEY=your_groq_key
-   ```
-4. `uvicorn app.main:app --reload`
-
-### Frontend Setup
-1. `cd frontend/frontend`
-2. `npm install`
-3. `npm run dev`
-
----
-
-## 13. Limitations & Future Roadmap
-**Current Limitations:**
-- **In-Memory FAISS:** Requires a manual sync from MongoDB on startup (implemented in `main.py`).
-- **No Metadata Filtering:** Vector search retrieves globally first, then filters meeting-ids manually in the backend.
-- **No Real-time Audio:** Currently relies on pre-transcribed text/vtt files.
-
-**Future Roadmap:**
-- **Scalable Vector Search:** Migrate FAISS to **Pinecone** for persistent, cloud-native vector storage.
-- **Performance:** Add a **Redis caching** layer for frequent workspace queries.
-- **Async Processing:** Implement **Celery** to handle large transcript uploads in the background.
-
----
-
-## 14. Demo Flow (Guide)
-1. **Dashboard Home:** Start at the landing page to see the **Intelligence Overview** (Quick stats on transcripts, decisions, and overall sentiment).
-2. **Upload:** Go to the "Upload" page and drag a `.vtt` transcript. Wait for the **Summary** (Speaker count, Word count, detected date).
-3. **Traceability:** In the "Meeting Detail" / "Decisions" view, expand a decision to see the **Explainability Layer** — the underlying transcript segments.
-4. **Export:** Click the **Export CSV/PDF** button to receive a formatted summary of the meeting highlights and tasks.
-5. **Action Execution:** Go to "Action Tracker" and mark a task from the transcript as completed.
-6. **Speaker Intelligence**: Navigate to the **Intelligence** page. Use the **Meeting Selector** to filter results.
-   - Click a node on the **Sentiment Flow** timeline to open the **Dialogue Inspector**.
-   - Read the **1-line Insight** at the top for a quick situation report.
-   - Use the **Radar Chart** to compare how different speakers contributed to the meeting's emotional tone.
-7. **RAG Intelligence:** Open the **Query Engine** (Global Chat) and ask broad questions like *"What were the three main concerns raised across all meetings?"*
-   - Notice the **"Analyzing N meetings"** badge providing feedback on retrieval scope.
-8. **History Management:** Navigate to **Meeting History**. Toggle "Group by Name" to see how recurring weekly syncs are consolidated into a single thematic folder.
-9. **Source Attribution:** Notice how the AI answers provide **clickable citations** that link back to the exact meeting and segment. 
-   - Click **"Show Evidence"** to expand the traceable context cards grouped by their **Meeting Title**.
+- **Cloud Vector Orchestration**: Migrating to managed Vector DBs (Pinecone/Weaviate) and asynchronous task queues for enterprise-scale ingestion.
+- **Multi-Modal Diarization**: Native audio/video processing with high-accuracy speaker labeling via Whisper v3.
+- **Enterprise Integrations**: Two-way synchronization with **Jira, Slack, and Linear** for automated task and intelligence distribution.
+- **Relational Intelligence**: Transitioning to a **Graph RAG (Neo4j)** architecture to map complex relationships across months of organizational dialogue.
