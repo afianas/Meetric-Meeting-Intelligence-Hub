@@ -23,20 +23,9 @@ export function Header() {
             <Link href="#features" className="text-xs font-semibold uppercase tracking-widest text-muted-foreground hover:text-primary transition-colors">
               Features
             </Link>
-            <Link href="/app/transcripts" className="text-xs font-semibold uppercase tracking-widest text-muted-foreground hover:text-primary transition-colors">
-              Briefings
-            </Link>
-            <Link href="#pricing" className="text-xs font-semibold uppercase tracking-widest text-muted-foreground hover:text-primary transition-colors">
-              Pricing
-            </Link>
           </div>
 
           <div className="flex items-center gap-3">
-            <Link href="/app" className="hidden sm:block">
-              <Button variant="ghost" size="sm" className="text-xs font-bold uppercase tracking-wider h-8">
-                Log In
-              </Button>
-            </Link>
             <Link href="/app">
               <Button size="sm" className="rounded-full text-xs font-bold uppercase tracking-wider h-8 px-5 bg-primary hover:scale-105 transition-transform shadow-lg shadow-primary/20">
                 Get Started

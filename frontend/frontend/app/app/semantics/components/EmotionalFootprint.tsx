@@ -13,7 +13,7 @@ export function EmotionalFootprint({ speakers }: EmotionalFootprintProps) {
     <div className="lg:col-span-5 space-y-4">
       <h3 className="font-serif text-xl px-2">Emotional Footprint</h3>
       <div className="space-y-4">
-        {speakers.slice(0, 3).map((s, index) => (
+        {speakers.map((s, index) => (
           <Card key={`footprint-${s.speaker}`} className="border-border/30 bg-card/10 backdrop-blur-md rounded-2xl overflow-hidden shadow-none hover:shadow-sm transition-all hover:border-border/50">
             <CardContent className="p-4 space-y-4">
               <div className="flex items-center gap-3">

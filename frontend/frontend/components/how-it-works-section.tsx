@@ -6,20 +6,20 @@ const steps = [
   {
     icon: Upload,
     step: "01",
-    title: "Upload Your Recordings",
-    description: "Drop your meeting recordings in MP3, MP4, or WAV format. We support files up to 500MB.",
+    title: "Upload Your Transcripts",
+    description: "Drop your meeting transcripts in JSON or raw text format to map your collaborative dialogue.",
   },
   {
     icon: Cpu,
     step: "02",
-    title: "AI Processing",
-    description: "Our engine indexes and analyzes your dialogue, extracting key insights and decisions automatically.",
+    title: "Semantic Analysis",
+    description: "Our engine indexes your conversational structure, mapping emotional footprint and interaction flow.",
   },
   {
     icon: FileText,
     step: "03",
-    title: "Review Transcripts",
-    description: "Access beautifully formatted transcripts with speaker identification, timestamps, and highlights.",
+    title: "Review Timelines",
+    description: "Access synchronized dynamic timelines that highlight speaker pivots, tone intensity, and participation.",
   },
   {
     icon: Sparkles,

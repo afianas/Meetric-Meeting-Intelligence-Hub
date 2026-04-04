@@ -17,7 +17,7 @@ const features = [
   {
     icon: MessageSquare,
     title: "Query Engine",
-    description: "Ask questions across all your historical transcripts. Find decisions, clarify intent, and extract data in seconds.",
+    description: "Ask questions globally across all your historical transcripts or a specific transcript. Find decisions, clarify intent, and extract data in seconds.",
   },
   {
     icon: BarChart3,

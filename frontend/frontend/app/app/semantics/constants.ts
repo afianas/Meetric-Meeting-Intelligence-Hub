@@ -16,6 +16,10 @@ export const EMOTION_WEIGHTS: Record<string, number> = {
   neutral: 0
 };
 
+export const SPEAKER_PALETTE = [
+  "#3b82f6", "#10b981", "#f59e0b", "#8b5cf6", "#ec4899"
+];
+
 export const DEFAULT_EMOTION_COLOR = "#94a3b8";
 
 export function getEmotionColor(emotion: string | undefined): string {

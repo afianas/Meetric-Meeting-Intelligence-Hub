@@ -42,19 +42,20 @@ function AnimatedCounter({ end, duration = 2000, suffix = "" }: { end: number; d
   )
 }
 
+const STATS = [
+  { value: 85,    suffix: "%", label: "Reduction in follow-up syncs" },
+  { value: 12,    suffix: "h", label: "Saved per week per leader"    },
+  { value: 10000, suffix: "+", label: "Meetings analyzed"            },
+  { value: 98,    suffix: "%", label: "User satisfaction rate"       },
+]
+
 export function StatsSection() {
-  const stats = [
-    { value: 85, suffix: "%", label: "Reduction in follow-up syncs" },
-    { value: 12, suffix: "h", label: "Saved per week per leader" },
-    { value: 10000, suffix: "+", label: "Meetings analyzed" },
-    { value: 98, suffix: "%", label: "User satisfaction rate" },
-  ]
 
   return (
     <section className="py-24 bg-background relative overflow-hidden">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8">
-          {stats.map((stat, index) => (
+          {STATS.map((stat, index) => (
             <div 
               key={index} 
               className="group relative p-8 rounded-3xl bg-secondary/50 backdrop-blur-sm border border-white/10 hover:border-primary/30 transition-all hover:translate-y-[-4px] text-center"

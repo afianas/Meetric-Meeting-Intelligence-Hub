@@ -3,7 +3,7 @@ import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { TrendingUp, Info } from "lucide-react"
 import { AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid, ResponsiveContainer } from "recharts"
-import { ChartFlowSegment, FlowSegment } from "../types"
+import { ChartFlowSegment, FlowSegment, ChartClickEvent } from "../types"
 import { EMOTIONS, getEmotionBg, getEmotionColor } from "../constants"
 import { getInitials } from "@/lib/api"
 
@@ -36,7 +36,12 @@ export function ConversationFlow({ chartFlow, setSelectedSegment }: Conversation
         {chartFlow.length > 0 ? (
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart data={chartFlow} margin={{ top: 0, right: 0, left: 0, bottom: 0 }}
-              onClick={(e: any) => e?.activePayload && setSelectedSegment(e.activePayload[0].payload)}>
+              onClick={(e: unknown) => {
+                const ev = e as ChartClickEvent;
+                if (ev?.activePayload?.[0]) {
+                  setSelectedSegment(ev.activePayload[0].payload);
+                }
+              }}>
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
               <XAxis dataKey="index" hide />
               <YAxis hide domain={[-15, 15]} />

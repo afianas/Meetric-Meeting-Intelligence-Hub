@@ -36,7 +36,7 @@ export function CtaSection() {
                 <Button 
                   size="lg" 
                   variant="outline"
-                  className="px-10 h-16 rounded-full text-base font-bold uppercase tracking-widest border-2 border-white/10 text-white hover:bg-white/5 transition-colors"
+                  className="px-10 h-16 rounded-full text-base font-bold uppercase tracking-widest border-2 border-white/10 bg-transparent text-white hover:bg-white/5 transition-colors"
                 >
                   Book Executive Demo
                 </Button>

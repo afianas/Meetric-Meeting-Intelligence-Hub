@@ -44,6 +44,7 @@ export default function SpeakerIntelligencePage() {
 
   // Derived Datasets via Memoization
   const speakers = useMemo(() => analytics?.speakers || [], [analytics])
+  const topCollaborators = useMemo(() => speakers.slice(0, 3), [speakers])
   const flow = useMemo(() => flowData?.flow || [], [flowData])
 
   const dominantSentiment = useMemo(() => {
@@ -106,7 +107,7 @@ export default function SpeakerIntelligencePage() {
       <HeroSplit insightData={insightData} dominantSentiment={dominantSentiment} />
 
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
-        <CollaboratorRadar speakers={speakers} />
+        <CollaboratorRadar speakers={topCollaborators} />
         <ConversationFlow chartFlow={chartFlow} setSelectedSegment={setSelectedSegment} />
       </div>
 

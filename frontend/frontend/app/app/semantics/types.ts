@@ -45,3 +45,7 @@ export interface FlowResponse {
 export interface InsightResponse {
   insight: string;
 }
+
+export interface ChartClickEvent {
+  activePayload?: { payload: FlowSegment }[];
+}

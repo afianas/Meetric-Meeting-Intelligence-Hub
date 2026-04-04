@@ -2,7 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { User } from "lucide-react"
 import { Radar, RadarChart, PolarGrid, PolarAngleAxis, ResponsiveContainer, Tooltip } from "recharts"
 import { Speaker } from "../types"
-import { EMOTIONS } from "../constants"
+import { EMOTIONS, SPEAKER_PALETTE } from "../constants"
 import { useMemo } from "react"
 
 interface CollaboratorRadarProps {
@@ -13,7 +13,7 @@ export function CollaboratorRadar({ speakers }: CollaboratorRadarProps) {
   const radarData = useMemo(() => {
     return EMOTIONS.map(emotion => {
       const entry: Record<string, string | number> = { emotion: emotion.toUpperCase() }
-      speakers.slice(0, 3).forEach(s => { 
+      speakers.forEach(s => { 
         entry[s.speaker] = s.emotion_distribution[emotion] || 0 
       })
       return entry
@@ -37,10 +37,13 @@ export function CollaboratorRadar({ speakers }: CollaboratorRadarProps) {
             <RadarChart data={radarData} margin={{ top: 20, right: 30, bottom: 20, left: 30 }}>
               <PolarGrid stroke="#e2e8f0" strokeDasharray="4 4" />
               <PolarAngleAxis dataKey="emotion" tick={{ fontSize: 10, fontWeight: 700, fill: "#64748b" }} />
-              {speakers.slice(0, 3).map((s, i) => (
-                <Radar key={s.speaker} name={s.speaker} dataKey={s.speaker}
-                  stroke={["#3b82f6", "#10b981", "#f59e0b"][i]} fill={["#3b82f6", "#10b981", "#f59e0b"][i]} fillOpacity={0.15} />
-              ))}
+              {speakers.map((s, i) => {
+                const color = SPEAKER_PALETTE[i % SPEAKER_PALETTE.length];
+                return (
+                  <Radar key={s.speaker} name={s.speaker} dataKey={s.speaker}
+                    stroke={color} fill={color} fillOpacity={0.15} />
+                )
+              })}
               <Tooltip contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 30px rgba(0,0,0,0.1)' }} />
             </RadarChart>
           </ResponsiveContainer>

@@ -28,7 +28,7 @@ export function HeroSection() {
           </h1>
 
           <p className="mt-8 text-xl text-muted-foreground max-w-xl leading-relaxed font-medium">
-            Meetric transforms your meeting transcripts into curated <span className="text-foreground italic">editorial intelligence</span>. No noise. Just structure, action, and insight.
+            Meetric transforms your meeting transcripts into <span className="text-foreground italic">actionable intelligence</span>. No noise. Just structure, semantic flow, and direct insight.
           </p>
 
           <div className="mt-12 flex flex-wrap items-center gap-6">

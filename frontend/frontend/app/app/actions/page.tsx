@@ -92,11 +92,11 @@ export default function ActionTrackerPage() {
 
       <div />
 
-      {/* Sprint Progress */}
+      {/* Progress */}
       <Card>
         <CardContent className="p-6">
           <div className="flex items-center justify-between">
-            <h2 className="font-serif text-xl font-semibold text-foreground">Sprint Progress</h2>
+            <h2 className="font-serif text-xl font-semibold text-foreground">Progress</h2>
             <span className="text-sm text-muted-foreground">{stats.done} of {stats.total} complete</span>
           </div>
           <Progress value={stats.progress} className="mt-4 h-3 transition-all" />

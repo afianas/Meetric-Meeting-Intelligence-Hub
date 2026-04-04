@@ -5,7 +5,6 @@ import { FeaturesSection } from "@/components/features-section"
 import { HowItWorksSection } from "@/components/how-it-works-section"
 import { DashboardPreviewSection } from "@/components/dashboard-preview-section"
 import { TestimonialSection } from "@/components/testimonial-section"
-import { PricingSection } from "@/components/pricing-section"
 import { CtaSection } from "@/components/cta-section"
 import { Footer } from "@/components/footer"
 
@@ -19,7 +18,6 @@ export default function HomePage() {
       <HowItWorksSection />
       <DashboardPreviewSection />
       <TestimonialSection />
-      <PricingSection />
       <CtaSection />
       <Footer />
     </main>

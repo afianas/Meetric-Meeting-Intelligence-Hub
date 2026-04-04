@@ -36,10 +36,9 @@ const getConfidenceLabel = (conf: number) => {
 };
 
 const suggestedQueries = [
-// ... (rest of imports and constants)
-  { title: "What decisions were made?", icon: Lightbulb },
-  { title: "Who is responsible for action items?", icon: FileText },
-  { title: "What were the key concerns raised?", icon: MessageSquare },
+  { title: "Summarize the core topics and themes discussed.", icon: Lightbulb },
+  { title: "What was the overall tone and sentiment of the meetings?", icon: MessageSquare },
+  { title: "Identify any commitments, action items, or next steps.", icon: FileText },
 ]
 
 interface Message {
