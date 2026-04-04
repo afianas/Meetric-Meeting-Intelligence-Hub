@@ -1,7 +1,16 @@
 from app.services.vector_service import add_vector, reset_vectors
 from bson import ObjectId
 
+def get_all_meeting_titles_and_ids():
+    if collection is None:
+        return []
+    meetings = list(collection.find({}, {"analysis.meeting_name": 1, "_id": 1}))
+    return [{"id": str(m["_id"]), "title": m.get("analysis", {}).get("meeting_name", "Unnamed Meeting")} for m in meetings]
+
 def get_all_meetings():
+    if collection is None:
+        return []
+        
     meetings = list(collection.find())
 
     for m in meetings:
@@ -35,8 +44,13 @@ def add_meeting(data):
     if collection is None:
         raise Exception("MongoDB not connected")
 
+    analysis = data.get("analysis", {})
+    # Fallback to ensure we always have a meeting name
+    if not analysis.get("meeting_name"):
+        analysis["meeting_name"] = "Untitled Meeting"
+
     new_meeting = {
-        "analysis": data.get("analysis", {}),
+        "analysis": analysis,
         "segments": data.get("segments", [])
     }
 
@@ -61,6 +75,9 @@ def delete_meeting(meeting_id: str):
         raise Exception("MongoDB not connected")
     try:
         result = collection.delete_one({"_id": ObjectId(meeting_id)})
+        if result.deleted_count > 0:
+            from app.services.vector_service import remove_meeting_vectors
+            remove_meeting_vectors(meeting_id)
         return result.deleted_count > 0
     except Exception:
         return False
@@ -74,9 +91,17 @@ def get_segments_by_ids(segment_ids):
     # Find any meeting containing at least one of these segment IDs
     for meeting in collection.find({"segments.segment_id": {"$in": segment_ids}}):
         m_id = str(meeting["_id"])
+        # Fetch canonical meeting name from analysis
+        analysis = meeting.get("analysis", {})
+        m_title = analysis.get("meeting_name") or analysis.get("title") or meeting.get("meeting_title")
+        
+        if not m_title or m_title == "Unnamed Meeting":
+            m_title = f"Meeting {m_id[-6:].upper()}"
+        
         for seg in meeting.get("segments", []):
             if seg.get("segment_id") in segment_ids:
                 seg["meeting_id"] = m_id
+                seg["meeting_title"] = m_title
                 results.append(seg)
 
-    return results
+    return results

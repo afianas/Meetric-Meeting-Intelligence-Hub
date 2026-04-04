@@ -45,3 +45,8 @@ htmlcov/
 # Temporary files
 *.tmp
 *.temp
+
+# Local Planning Artifacts (Untracked)
+implementation_plan.md
+task.md
+walkthrough.md

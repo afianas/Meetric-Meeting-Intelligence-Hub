@@ -11,8 +11,8 @@ emotion_pipeline = pipeline(
 def map_emotion(label):
     label = label.lower()
 
-    # Map model outputs → your UI categories
-    if label in ["joy", "love", "surprise"]:
+    # Map model outputs → your UI categories (Domain-Specific Normalization)
+    if label in ["joy", "love"]:
         return "agreement"
     elif label in ["fear", "sadness"]:
         return "concern"
