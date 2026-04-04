@@ -19,30 +19,32 @@ Meetings generate massive amounts of unstructured dialogue. Critical decisions a
 ### **Core Philosophy / Approach: Grounded Retrieval**
 The system is designed for **Traceability**. Unlike standard large language model (LLM) interfaces that may hallucinate summaries, Meetric ensures that every answer is grounded in specific transcript segments. Users can verify any AI claim by clicking a citation that deep-links directly to the source text.
 
-### **🚀 Automated Intelligence Extraction**
+### KEY FEATURES:
+
+#### **🚀 Automated Intelligence Extraction**
 - **Decision Capture**: Identifies strategic agreements via **Llama-3.3-70B** JSON-formatted extraction focused on consensus nodes.
 - **Action Tracker**: Maps tasks to owners and deadlines using LLM-extracted structured objects with **MongoDB** persistence.
 - **Formatted Export**: Dynamic report generation across **CSV and PDF** formats based on real-time extraction data.
 
-### **📊 Speaker Intelligence & Analytics**
+#### **📊 Speaker Intelligence & Analytics**
 - **Behavioral Radar**: Aggregates speaker behaviors using **DistilBERT**-based emotion classification across dialogue segments.
 - **Synchronized Timeline**: Plotted with **Recharts** to visualize chronological emotional shifts, linked directly to transcript nodes.
 - **Speaker Profiling**: Normalized behavioral aggregation across multiple meetings to identify communication trends over time.
 - **Sentiment Insights**: Rule-based one-line summary generation based on dominant emotion spikes throughout the session.
 
-### **🧠 Advanced RAG Chatbot & UI Widget**
+#### **🧠 Advanced RAG Chatbot & UI Widget**
 - **Scoped Search**: Metadata filtering (meeting-id) on the **FAISS index** to restrict retrieval results to a single transcript.
 - **Global Search**: **Diversity-Aware Sampling** algorithm used to gather evidence from multiple meetings in the workspace.
 - **Persistent Access**: A dedicated **Glassmorphic React Component** widget used for context-aware Q&A across the platform.
 - **Evidence Documentation**: Source mapping using segment-id deep-links for **100% provenance verification**.
 
-### **⚙️ Workspace Management**
+#### **⚙️ Workspace Management**
 - **Dynamic Grouping**: JavaScript-based grouping (Date/Project) on the frontend for organized archive navigation.
 - **Multi-Format Ingestion**: Custom parsers for **WebVTT (.vtt)** and plain text (.txt) file structures.
 - **Task Lifecycle**: **React Query** mutation logic used to sync task completion status between the UI and database.
 - **Global Reset**: CRUD operations in MongoDB combined with **FAISS index resets** for environment cleanup.
 
-### **🛡️ Contextual Validation**
+#### **🛡️ Contextual Validation**
 - **Deep-Linking**: Index-based transcript navigation logic providing (±2) surrounding context segments.
 - **Visual Pulse**: CSS-animated "pulse" triggered by citation navigation to guide the user's eye to target evidence.
 
@@ -172,16 +174,7 @@ The interface follows a **Minimalist Analytical** design:
 
 ---
 
-
-## Design & Interaction
-The interface follows a **Minimalist Analytical** design:
-- **Glassmorphic Depth**: Layers of information are separated using subtle transparency and blur effects for visual hierarchy.
-- **Synchronized State**: Filter selections (Speakers, Meetings, Dates) update all visualizations across the dashboard simultaneously without page reloads.
-- **Editorial Legibility**: Typography is optimized for long-form reading, with clear distinctions between transcript text and analytical data.
-
----
-
-## API Documentation
+## 8. API Documentation
 Listing all backend endpoints available for workspace orchestration and intelligence retrieval:
 
 ### **Ingestion & Data Lifecycle**
@@ -206,7 +199,7 @@ Listing all backend endpoints available for workspace orchestration and intellig
 
 ---
 
-## App Structure
+## 9. App Structure
 ```text
 backend/
   routes/       # API endpoints (Upload, Chat, Analytics, Tasks)
@@ -221,7 +214,7 @@ frontend/
 
 ---
 
-## Demo Flow
+## 10. Demo Flow
 1. **Ingestion**: Drop a `.vtt` file to initiate the "Hot-Extract" pipeline.
 2. **Behavior Analysis**: View the **Collaborator Radar** to assess team dynamics.
 3. **Timeline Inspection**: Use the **Dialogue Inspector** to drill down into specific sentiment nodes.
@@ -230,7 +223,7 @@ frontend/
 
 ---
 
-## Future Roadmap: Scaling to Production
+## 11. Future Roadmap: Scaling to Production
 
 - **Cloud Vector Orchestration**: Migrating to managed Vector DBs (Pinecone/Weaviate) and asynchronous task queues for enterprise-scale ingestion.
 - **Multi-Modal Diarization**: Native audio/video processing with high-accuracy speaker labeling via Whisper v3.
