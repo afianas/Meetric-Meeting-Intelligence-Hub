@@ -12,11 +12,9 @@ export function Header() {
     <header className="fixed top-6 left-0 right-0 z-50 px-4 pointer-events-none">
       <nav className="mx-auto max-w-4xl pointer-events-auto">
         <div className="rounded-full bg-background/60 backdrop-blur-xl border border-white/20 shadow-[0_8px_32px_0_rgba(0,0,0,0.1)] px-6 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="h-7 w-7 rounded-full bg-primary flex items-center justify-center">
-              <span className="text-primary-foreground font-bold text-[10px]">M</span>
-            </div>
-            <span className="font-serif text-lg font-semibold italic text-primary tracking-tight">Meetric</span>
+          <div className="flex items-center gap-2.5">
+            <span className="h-2 w-2 rounded-full bg-primary" />
+            <span className="font-serif text-lg font-semibold italic text-foreground tracking-tight">Meetric</span>
           </div>
 
           <div className="hidden md:flex items-center gap-8">
