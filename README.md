@@ -26,7 +26,6 @@ The system is built on the principle that **AI should never speak without proof*
 - **Verifiable Analytics**: Emotional and behavioral trends are directly mapped to specific dialogue segments for objective verification.
 
 ## Key Features & Technical Implementation
-*Mapping core requirements to production-grade engineering.*
 
 ### **1. Multi-Transcript Ingestion Portal**
 - **Feature**: Bulk upload of `.vtt` and `.txt` files with intelligent archiving and real-time validation to block unsupported formats.
