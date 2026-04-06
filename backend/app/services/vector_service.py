@@ -41,7 +41,14 @@ def upsert_meeting_vectors(meeting_id: str, meeting_title: str, segments: List[D
         return False
 
     vectors_to_upsert = []
+    MAX_METADATA_CHARS = 30000 # Pinecone limit is 40KB; 30K is safe for text + overhead
+
     for seg in segments:
+        raw_text = seg.get("text", "")
+        # Truncate text for vector storage to stay under 40KB metadata limit
+        # The full text remains in MongoDB
+        metadata_text = raw_text[:MAX_METADATA_CHARS] + "..." if len(raw_text) > MAX_METADATA_CHARS else raw_text
+        
         vectors_to_upsert.append({
             "id": f"{meeting_id}_{seg['segment_id']}",
             "values": seg["embedding"].tolist() if hasattr(seg["embedding"], "tolist") else seg["embedding"],
@@ -51,11 +58,15 @@ def upsert_meeting_vectors(meeting_id: str, meeting_title: str, segments: List[D
                 "segment_id": seg["segment_id"],
                 "speaker": seg.get("speaker", "Unknown"),
                 "role": seg.get("role", "Participant"),
-                "text": seg.get("text", ""),
+                "text": metadata_text,
                 "emotion": seg.get("emotion", "Neutral"),
                 "timestamp": seg.get("timestamp", 0)
             }
         })
+
+    if not vectors_to_upsert:
+        logger.warning(f"⚠️ No vectors to upsert for meeting {meeting_id}. Skipping Pinecone index.")
+        return True
 
     try:
         # Use prod namespace to isolate environments
@@ -74,13 +85,17 @@ def add_vector(vector, segment_id, meeting_id, meeting_title="Unknown", extra_me
     if index is None:
         return
 
+    raw_text = extra_metadata.get("text", "") if extra_metadata else ""
+    MAX_METADATA_CHARS = 30000
+    metadata_text = raw_text[:MAX_METADATA_CHARS] + "..." if len(raw_text) > MAX_METADATA_CHARS else raw_text
+
     metadata = {
         "meeting_id": meeting_id,
         "meeting_title": meeting_title,
         "segment_id": segment_id,
         "speaker": "Unknown",
         "role": "Participant",
-        "text": "",
+        "text": metadata_text,
         "emotion": "Neutral",
         "timestamp": 0
     }

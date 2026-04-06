@@ -24,10 +24,10 @@ import {
   Zap,
   TrendingUp
 } from "lucide-react"
-import { uploadTranscript, getMeetings, deleteMeeting, BackendMeeting, normalizeMeeting, getInitials } from "@/lib/api"
+import { uploadTranscript, getMeetings, deleteMeeting, BackendMeeting, normalizeMeeting, getInitials, getJobStatus } from "@/lib/api"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 
-type UploadStatus = "idle" | "uploading" | "processing" | "completed" | "error"
+type UploadStatus = "idle" | "uploading" | "processing" | "completed" | "error" | "queued"
 
 interface UploadItem {
   id: string;
@@ -35,8 +35,10 @@ interface UploadItem {
   meetingName: string;
   status: UploadStatus;
   progress: number;
+  message?: string;
   error?: string;
   resultId?: string;
+  jobId?: string;
 }
 
 export default function UploadPage() {
@@ -84,6 +86,8 @@ export default function UploadPage() {
       return word.charAt(0).toUpperCase() + word.slice(1);
     }).join(' ');
   };
+
+  const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
   // Batch Selection Handler
   const handleFilesSelected = (files: FileList | null) => {
@@ -141,7 +145,7 @@ export default function UploadPage() {
     updateItem(id, { status: "idle", error: undefined, progress: 0 });
   };
 
-  // Sequential Batch Processor
+  // Sequential Batch Processor with Real-time Polling
   const processBatch = async () => {
     if (isBatchProcessing) return;
     setIsBatchProcessing(true);
@@ -150,26 +154,47 @@ export default function UploadPage() {
 
     for (const item of idleItems) {
       try {
-        updateItem(item.id, { status: "uploading", progress: 10 });
-        const uploadProgressInterval = setInterval(() => {
-          setUploadQueue(prev => prev.map(queueItem =>
-            queueItem.id === item.id && queueItem.progress < 30
-              ? { ...queueItem, progress: queueItem.progress + 5 }
-              : queueItem
-          ));
-        }, 100);
+        // Step 1: Initiate Upload
+        updateItem(item.id, { status: "uploading", progress: 5, message: "Transporting Archive" });
+        
+        const { job_id } = await uploadTranscript(item.file, item.meetingName);
+        updateItem(item.id, { jobId: job_id, status: "processing" });
 
-        await new Promise(resolve => setTimeout(resolve, 500));
-        clearInterval(uploadProgressInterval);
-        updateItem(item.id, { status: "processing", progress: 40 });
+        // Step 2: Poll for Status
+        let isDone = false;
+        let pollCount = 0;
+        const MAX_POLLS = 300; // 5 minutes max @ 1s intervals
 
-        const result = await uploadTranscript(item.file, item.meetingName);
+        while (!isDone && pollCount < MAX_POLLS) {
+          pollCount++;
+          const job = await getJobStatus(job_id);
 
-        updateItem(item.id, {
-          status: "completed",
-          progress: 100,
-          resultId: result._id
-        });
+          if (job.status === "completed") {
+            updateItem(item.id, {
+              status: "completed",
+              progress: 100,
+              message: "Synthesis Ready",
+              resultId: job.result?.id
+            });
+            isDone = true;
+          } else if (job.status === "failed") {
+            throw new Error(job.error_message || "Processing failed");
+          } else {
+            // Update live progress and message
+            updateItem(item.id, {
+              progress: job.progress,
+              message: job.message,
+              status: job.status === "queued" ? "queued" : "processing"
+            });
+          }
+
+          if (!isDone) await sleep(1000);
+        }
+
+        if (pollCount >= MAX_POLLS) {
+          throw new Error("Processing timed out. Please check the archive later.");
+        }
+
         queryClient.invalidateQueries({ queryKey: ['meetings'] });
       } catch (err: any) {
         updateItem(item.id, {
@@ -378,13 +403,17 @@ export default function UploadPage() {
                             <div className="flex items-center gap-3">
                               {item.status === "uploading" && <div className="h-1.5 w-1.5 bg-primary rounded-full animate-pulse" />}
                               {item.status === "processing" && <Sparkles className="h-3.5 w-3.5 text-primary animate-pulse" />}
+                              {item.status === "queued" && <div className="h-1.5 w-1.5 bg-muted-foreground/40 rounded-full animate-pulse" />}
                               <span className={`text-[10px] font-black uppercase tracking-[0.2em] ${item.status === "error" ? "text-destructive" :
                                   item.status === "completed" ? "text-green-600" : "text-primary"
                                 }`}>
-                                {item.status === "uploading" ? "Transporting Archive" :
-                                  item.status === "processing" ? "Extracting Intel" :
-                                    item.status === "completed" ? "Synthesis Ready" :
-                                      item.status === "error" ? "Operational Fault" : "Queued"}
+                                {item.message || (
+                                  item.status === "uploading" ? "Transporting Archive" :
+                                    item.status === "processing" ? "Extracting Intel" :
+                                      item.status === "completed" ? "Synthesis Ready" :
+                                        item.status === "error" ? "Operational Fault" : 
+                                          item.status === "queued" ? "Waiting in Queue" : "Queued"
+                                )}
                               </span>
                             </div>
                             <span className="text-[10px] font-mono font-black text-muted-foreground/40">{item.progress}%</span>
@@ -430,8 +459,8 @@ export default function UploadPage() {
                     <span className="text-xs font-black text-primary">1</span>
                   </div>
                   <div className="space-y-1.5">
-                    <p className="text-[11px] font-black uppercase tracking-widest text-foreground">Decision Mapping</p>
-                    <p className="text-xs text-muted-foreground/80 leading-relaxed font-light">Llama 3.3 identifies consensus points with evidentiary backing.</p>
+                    <p className="text-[11px] font-black uppercase tracking-widest text-foreground">Map-Reduce Segmentation</p>
+                    <p className="text-xs text-muted-foreground/80 leading-relaxed font-light">Llama 3.1 & 3.3 collaborate for chunked, overlap-aware dialogue extraction.</p>
                   </div>
                 </div>
 
@@ -440,8 +469,8 @@ export default function UploadPage() {
                     <span className="text-xs font-black text-primary">2</span>
                   </div>
                   <div className="space-y-1.5">
-                    <p className="text-[11px] font-black uppercase tracking-widest text-foreground">Action Tracking</p>
-                    <p className="text-xs text-muted-foreground/80 leading-relaxed font-light">Granular extraction of milestones and projected deadlines.</p>
+                    <p className="text-[11px] font-black uppercase tracking-widest text-foreground">Semantic Synthesis</p>
+                    <p className="text-xs text-muted-foreground/80 leading-relaxed font-light">DistilBERT quantifies sentiment flow while Llama 3.3 distills strategic insights.</p>
                   </div>
                 </div>
 
@@ -450,8 +479,8 @@ export default function UploadPage() {
                     <span className="text-xs font-black text-primary">3</span>
                   </div>
                   <div className="space-y-1.5">
-                    <p className="text-[11px] font-black uppercase tracking-widest text-foreground">Sentiment Flow</p>
-                    <p className="text-xs text-muted-foreground/80 leading-relaxed font-light">DistilBERT quantifies emotional trajectories across segments.</p>
+                    <p className="text-[11px] font-black uppercase tracking-widest text-foreground">Vector Indexing</p>
+                    <p className="text-xs text-muted-foreground/80 leading-relaxed font-light">Neural persistence in Pinecone with automated decision-to-evidence traceability.</p>
                   </div>
                 </div>
               </div>

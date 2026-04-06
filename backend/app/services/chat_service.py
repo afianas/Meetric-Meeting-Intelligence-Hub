@@ -7,7 +7,7 @@ logger = logging.getLogger("app.chat_service")
 client = Groq(api_key=os.getenv("GROQ_API_KEY"))
 
 
-def call_llm(prompt: str, system_instruction: str = None, model: str = "llama-3.3-70b-versatile"):
+def call_llm(prompt: str, system_instruction: str = None, model: str = "llama-3.3-70b-versatile", timeout: int = 60):
     try:
         if not system_instruction:
             system_instruction = (
@@ -22,7 +22,8 @@ def call_llm(prompt: str, system_instruction: str = None, model: str = "llama-3.
                 {"role": "system", "content": system_instruction},
                 {"role": "user", "content": prompt}
             ],
-            temperature=0.3
+            temperature=0.3,
+            timeout=timeout
         )
         return response.choices[0].message.content
     except Exception as e:

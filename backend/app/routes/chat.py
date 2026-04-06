@@ -56,7 +56,7 @@ def chat(query: str, meeting_id: str = None):
         mode = classify_query(query) if not meeting_id else "focused"
         
         # Adaptive retrieval depth
-        top_k = 100 if mode != "focused" else 15
+        top_k = 30 if mode != "focused" else 15
         
         # Step 2: Embed Query
         query_embedding = get_embedding(query)
@@ -85,7 +85,7 @@ def chat(query: str, meeting_id: str = None):
         # Step 5: High-Precision Reranking (BGE)
         reranked = rerank(query, unique_segments)
 
-        # Step 6: Relevance Thresholding (0.2)
+        # Step 6: Relevance Thresholding (0.0 — filters segments with negative BGE logits, i.e. sigmoid confidence < 50%)
         filtered = [(score, seg) for score, seg in reranked if score >= RELEVANCE_THRESHOLD]
         
         if not filtered:

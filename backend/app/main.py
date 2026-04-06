@@ -14,9 +14,7 @@ logger = logging.getLogger("app.main")
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.routes import upload, download, meetings, search, chat, analytics, tasks
-
-app = FastAPI()
+from app.routes import upload, download, meetings, search, chat, analytics, tasks, jobs
 
 app = FastAPI()
 
@@ -35,6 +33,7 @@ app.include_router(search.router)
 app.include_router(chat.router)
 app.include_router(analytics.router)
 app.include_router(tasks.router)
+app.include_router(jobs.router)
 
 from app.services.storage_service import collection
 from app.services.vector_service import index

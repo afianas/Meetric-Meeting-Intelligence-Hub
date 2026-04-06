@@ -37,6 +37,19 @@ export interface BackendAnalysis {
   speakers_identified: number;
 }
 
+export interface BackendJobStatus {
+  job_id: string;
+  status: "queued" | "processing" | "completed" | "failed";
+  progress: number;
+  message: string;
+  error_message?: string;
+  result?: {
+    id: string;
+    meeting_name: string;
+    segments_count: number;
+  };
+}
+
 export interface BackendMeeting {
   _id: string;
   analysis: BackendAnalysis;
@@ -180,7 +193,7 @@ export const getMeeting = (id: string) => apiFetch<BackendMeeting>(`/meetings/${
 export const deleteMeeting = (id: string) => apiFetch(`/meetings/${id}`, { method: "DELETE" });
 export const deleteAllMeetings = () => apiFetch("/meetings/all", { method: "DELETE" });
 
-export async function uploadTranscript(file: File, meetingName?: string): Promise<BackendMeeting> {
+export async function uploadTranscript(file: File, meetingName?: string): Promise<{ job_id: string }> {
   const form = new FormData();
   form.append("file", file);
   if (meetingName) form.append("meeting_name", meetingName);
@@ -188,6 +201,8 @@ export async function uploadTranscript(file: File, meetingName?: string): Promis
   if (!res.ok) throw new Error(await res.text().catch(() => "Upload failed"));
   return res.json();
 }
+
+export const getJobStatus = (jobId: string) => apiFetch<BackendJobStatus>(`/jobs/${jobId}`);
 
 export const chat = (query: string, meetingId?: string) => {
   const params = new URLSearchParams({ query });
