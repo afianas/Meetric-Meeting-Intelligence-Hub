@@ -1,16 +1,80 @@
-# Meetric Intelligence Hub: Turn Hours Of Dialogue Into Minutes Of Clarity
+## Project Title
+### Meetric Intelligence Hub: Turn Hours Of Dialogue Into Minutes Of Clarity
 
-## Project Demonstration
+#### Project Demonstration
 
-[![Project Demo](https://img.shields.io/badge/Project-Showcase-red?style=for-the-badge&logo=youtube)](https://drive.google.com/file/d/1HaxOBSXsASlW4IjiKtKmesqKk9N0GNvs/view?usp=drivesdk)
+
+[![Project Demo](https://img.shields.io/badge/Project-Showcase-red?style=for-the-badge&logo=youtube)](https://drive.google.com/file/d/1ytY3rC2KhT6XsrSgUGhOedjbqaDoJmbX/view?usp=drive_link)
+
+## Screenshots
+
+### Landing Page & Dashboard
+> From first impression to your meeting intelligence hub.
+
+<p align="center">
+  <img src="https://github.com/user-attachments/assets/4e678399-b11b-491a-b942-ecec3cd89823" width="48%"/>
+  <img src="https://github.com/user-attachments/assets/ea63643c-2894-4483-ba21-1f2699d8459c" width="48%"/>
+</p>
+
+### Select Transcript & Transcript View
+> Choose a meeting and dive into the full segmented transcript with extracted decisions and action items.
+
+<p align="center">
+  <img src="https://github.com/user-attachments/assets/0233795b-f267-4b46-b56d-fde0d092209c" width="48%"/>
+  <img src="https://github.com/user-attachments/assets/8f827213-ed13-4cb4-b48a-fdc3ea137358" width="48%"/>
+</p>
+
+### Decision Tracker
+> A curated log of all AI-extracted decisions with full traceability to source segments.
+
+<p align="center">
+  <img src="https://github.com/user-attachments/assets/68a46fee-c6ca-47a7-852c-f375a7b0fb2a" width="90%"/>
+</p>
+
+### Action Tracker
+> Track action items extracted from your meeting transcripts and toggle completion to sync with the backend.
+
+<p align="center">
+  <img src="https://github.com/user-attachments/assets/806c8bd6-6f18-479c-95f1-c0246b9687dd" width="90%"/>
+</p>
+
+### Global Chatbot & Scoped Chatbot
+> Query across all meetings or narrow to a single transcript — both powered by RAG-backed semantic search.
+
+<p align="center">
+  <img src="https://github.com/user-attachments/assets/1d1c3aa9-960c-45f9-914a-d71e45247b53" width="48%"/>
+  <img src="https://github.com/user-attachments/assets/098148aa-0d3c-4d74-8ad6-3d79f9243093" width="48%"/>
+</p>
+
+### Source Traceability
+> Clicking on evidence in the chatbot leads directly to the source segment in the transcript.
+
+<p align="center">
+  <img src="https://github.com/user-attachments/assets/1e5ba793-146e-4a00-932c-cb33c214acf0" width="90%"/>
+</p>
+
+### Speaker Semantics
+> Executive summary with pulsing animation indicating the overall dominant tone of the meeting.
+
+<p align="center">
+  <img src="https://github.com/user-attachments/assets/975a40f7-1b05-4376-b46b-298ac6120342" width="90%"/>
+</p>
+
+### Sentiment Timeline
+> Chronological grid visualizing how each speaker's tone evolves across the meeting.
+
+<p align="center">
+  <img src="https://github.com/user-attachments/assets/f54cdfdb-9b92-476d-ae37-85b648302f4e" width="90%"/>
+</p>
+
+### Conversation Flow & Collaborator Profile
+> See how dialogue shifts between agreement, concern, and conflict — and each speaker's emotional footprint.
+
+<p align="center">
+  <img src="https://github.com/user-attachments/assets/1220e070-c187-48ff-b0ba-239d5da42e48" width="90%"/>
+</p>
 
 ---
-
-## 📸 Screenshots
-*(Placeholders for UI Screenshots: Dashboard, Analytics, RAG Chat)*
-
----
-
 ## 🎯 The Problem
 
 Meetings generate vast amounts of unstructured dialogue. Decisions, action items, and strategic context often get buried in lengthy transcripts, making historical recall manual, error-prone, and inefficient. Without a reliable way to verify where an AI-generated summary originated, teams face information silos and a lack of organizational accountability.
