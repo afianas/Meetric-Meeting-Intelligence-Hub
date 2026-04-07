@@ -8,7 +8,7 @@ Modern professional environments generate massive volumes of unstructured dialog
 - **Token Limitations:** Raw transcripts easily exceed stable context windows, causing "Lost in the Middle" syndrome where LLMs forget critical middle-segment dialogue.
 - **Hallucination Risk:** Generative models tend to invent action items or misattribute quotes when summarizing massive documents.
 - **Traceability:** Users lose trust in AI analysis if they cannot instantly trace a claim back to the precise, timestamped source quote.
-- **Scaling Ingestion:** Processing high-volume concurrent audio/text uploads demands aggressive memory management.
+- **Scaling Ingestion:** Processing high-volume concurrent text uploads demands aggressive memory management.
 
 ## 3. Solution Design & Architecture
 The Meetric Intelligence Hub was architected deliberately to favor precision and traceability over aggressive summarization, designed as a highly scalable **Retrieval-Augmented Generation (RAG) Map-Reduce Pipeline**.
