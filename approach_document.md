@@ -37,7 +37,7 @@ Data parsing is inherently volatile. Our pipeline assumes LLMs will occasionally
 - **Pydantic Validation:** Strict static typing aggressively filters out incorrect payload shapes before they touch the database.
 - **Fall-Through JSON Recovery:** We utilize custom regex-based parsing utilities to gracefully salvage malformed LLM JSON strings (e.g., missing brackets, trailing commas) without panicking the system.
 - **Partial Failure Handling:** If a single 5-minute chunk fails during processing, the asynchronous batch processor logs the fault but continues executing, successfully rescuing the remaining 95% of the transcript.
-*(Detailed edge case handling is documented in our comprehensive Design Document).*
+*(Detailed edge case handling is documented in our comprehensive [Design Document](./design_document.md)).*
 
 ## 6. Tech Stack & Trade-Off Decisions
 - **2-Tier LLM Strategy**: Uses `Llama-3.1-8b` for high-volume pipeline segmentation and `Llama-3.3-70b` for complex user chat synthesis. This balances latency and API cost without sacrificing precision on logical pivots.
@@ -52,7 +52,7 @@ Data parsing is inherently volatile. Our pipeline assumes LLMs will occasionally
 
 ## 7. Scalability Approach
 - **Asynchronous Ingestion:** The FastAPI layer heavily utilizes asynchronous processing queues, allowing massive files to map-reduce in the background without holding HTTP connections hostage.
-- **Rolling Window Chunking:** Our strategy utilizes fixed overlap boundaries, mathematically guaranteeing that context bridging two physical chunks is never severed or orphaned.
+- **Rolling Window Chunking:** The strategy utilizes fixed overlap boundaries (exactly 2,000 tokens per chunk with a 15% sliding window overlap gap), mathematically guaranteeing that context bridging two physical chunks is never severed or orphaned.
 - **Managed Vector DB Scaling:** By offloading physical index matching to Pinecone, search traversal runs in milliseconds regardless of vector volume growth.
 
 ## 8. Future Improvements

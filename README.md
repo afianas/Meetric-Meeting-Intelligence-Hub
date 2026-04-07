@@ -137,7 +137,6 @@ MONGO_URI=your_mongodb_uri
 GROQ_API_KEY=your_groq_api_key
 PINECONE_API_KEY=your_pinecone_api_key
 PINECONE_INDEX_NAME=your_index_name
-HF_TOKEN=your_huggingface_token  # Optional: speeds up model downloads and prevents rate limits
 ```
 
 ### 4. Frontend Application
@@ -189,10 +188,10 @@ FastAPI (Python)
 | Method | Endpoint | Description |
 |:---:|:---|:---|
 | `POST` | `/upload` | Initiates backgrounded ingestion. Returns `job_id`. |
-| `GET` | `/jobs/{id}` | Polls for real-time progress and message updates. |
+| `GET` | `/jobs/{job_id}` | Polls for real-time progress and message updates. |
 | `GET` | `/meetings` | Returns archive with summary analytics. |
-| `GET` | `/meetings/{id}` | Returns a single meeting by ID. |
-| `DELETE` | `/meetings/{id}` | Synchronized deletion from MongoDB and Pinecone. |
+| `GET` | `/meetings/{meeting_id}` | Returns a single meeting by ID. |
+| `DELETE` | `/meetings/{meeting_id}` | Synchronized deletion from MongoDB and Pinecone. |
 | `DELETE` | `/meetings/all` | Deletes all meetings from the database. |
 
 ### **AI Search & Retrieval**

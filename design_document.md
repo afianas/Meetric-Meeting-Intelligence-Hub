@@ -28,12 +28,12 @@ The system is partitioned into modular system layers to ensure separation of con
 
 ## 5. End-to-End Data Flow
 The system manages a complete lifecycle from raw input to verifiable intelligence. Understanding this flow is the prerequisite for all deep-dive sections that follow:
-1. **Upload & Validation**: Client POSTs a transcript; the system validates format (`.vtt`/`.txt`) and initiates a background job, returning a `job_id` immediately.
+1. **Upload & Validation**: Client POSTs a transcript; the system validates format (`.vtt`/`.txt`) and initiates a background job, returning a `job_id` immediately. Rich analytical metadata (`date`, `word_count`, `speakers_identified`) is automatically computed.
 2. **Segmentation (Map)**: The file is split into token-aware chunks ($2,000$ tokens / $\approx 8,000$ characters); `Llama-3.1-8b` identifies dialogue boundaries and speaker roles per chunk.
 3. **Enrichment (Reduce)**: Each unique segment is tagged with sentiment/emotion via **DistilBERT** (Saravia dataset); duplicate segments from overlapping chunks are removed.
 4. **Insight Extraction**: `Llama-3.3-70b` synthesizes global decisions and action items from the full set of processed segments.
-5. **Vectorization & Indexing**: Segments are embedded via `all-MiniLM-L6-v2` and pushed to **Pinecone** (`prod` namespace); full metadata is committed to **MongoDB Atlas**.
-6. **Decision Tracing**: Extracted decisions are vector-searched against the local meeting index to find and persist source "evidence" segments — this happens at ingestion time, not query time.
+5. **Vectorization & Indexing**: Segments are embedded via `all-MiniLM-L6-v2` and pushed to **Pinecone** (`prod` namespace); full metadata alongside the computed metrics is committed to **MongoDB Atlas**.
+6. **Decision Tracing**: Extracted decisions are vector-searched against the local meeting index (retrieving the top-2 closest matches per decision) to find and persist source "evidence" segments. This actively triggers during the ingestion loop (`upload.py`) to completely eliminate query-time latency.
 7. **RAG Query**: User queries are LLM-classified (`FOCUSED`/`GLOBAL`/`SUMMARY`), retrieved from Pinecone, reranked via BGE cross-encoder, diversity-sampled, and synthesized into grounded answers with deep-linked citations.
 
 ## 6. Token-Safe Ingestion Pipeline (Map-Reduce)
