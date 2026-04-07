@@ -1,7 +1,8 @@
 import logging
 import math
 from fastapi import APIRouter
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
+from pydantic import BaseModel, field_validator
 from app.services.embedding_service import get_embedding
 from app.services.vector_service import search_vector
 from app.services.storage_service import get_all_meeting_titles_and_ids
@@ -49,8 +50,24 @@ def build_context(segments: List[Dict[str, Any]]) -> str:
     return "\n\n".join(parts)
 
 
-@router.get("/chat")
-def chat(query: str, meeting_id: str = None):
+class ChatRequest(BaseModel):
+    query: str
+    meeting_id: Optional[str] = None
+
+    @field_validator("query")
+    def validate_query(cls, v):
+        if not v or not v.strip():
+            raise ValueError("Query cannot be empty")
+        return v
+
+
+@router.post("/chat")
+async def chat(request: ChatRequest):
+    query = request.query
+    meeting_id = request.meeting_id
+    
+    logger.info(f"[CHAT] Request received | meeting_id={meeting_id}")
+    
     try:
         # Step 1: Detect Mode (LLM-based classification)
         mode = classify_query(query) if not meeting_id else "focused"

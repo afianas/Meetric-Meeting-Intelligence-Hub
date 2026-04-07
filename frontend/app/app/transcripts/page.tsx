@@ -221,7 +221,16 @@ function TranscriptsContent() {
             <span className="flex items-center gap-1"><MessageSquare className="h-4 w-4" />{mapped.words.toLocaleString()} words</span>
           </div>
         </div>
-      <div />
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" onClick={() => handleDownload('csv')} disabled={downloading}>
+            {downloading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Download className="h-4 w-4 mr-2" />}
+            Export CSV
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => handleDownload('pdf')} disabled={downloading}>
+            {downloading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Download className="h-4 w-4 mr-2" />}
+            Export PDF
+          </Button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
@@ -311,15 +320,21 @@ function TranscriptsContent() {
                 {actionItems.map(item => (
                   <button
                     key={item.id}
-                    className="flex items-start gap-2 w-full text-left hover:bg-muted/30 p-1.5 -mx-1.5 rounded-md transition-colors"
+                    className={`flex items-start gap-2 w-full text-left hover:bg-muted/30 p-1.5 -mx-1.5 rounded-md transition-colors ${taskMutation.isPending && taskMutation.variables?.taskId === item.id ? 'opacity-50' : ''}`}
                     onClick={() => taskMutation.mutate({ taskId: item.id, status: item.completed ? "pending" : "completed" })}
                     disabled={taskMutation.isPending && taskMutation.variables?.taskId === item.id}
                   >
-                    {taskMutation.isPending && taskMutation.variables?.taskId === item.id ? (
-                      <Loader2 className="mt-0.5 h-4 w-4 flex-shrink-0 text-muted-foreground animate-spin" />
-                    ) : (
-                      <CheckCircle2 className={`mt-0.5 h-4 w-4 flex-shrink-0 ${item.completed ? "text-green-600" : "text-muted-foreground"}`} />
-                    )}
+                    <div className="relative">
+                      {taskMutation.isPending && taskMutation.variables?.taskId === item.id ? (
+                        <CheckCircle2 className={`mt-0.5 h-4 w-4 flex-shrink-0 ${!item.completed ? "text-green-600" : "text-muted-foreground"}`} />
+                      ) : (
+                        <CheckCircle2 className={`mt-0.5 h-4 w-4 flex-shrink-0 ${item.completed ? "text-green-600" : "text-muted-foreground"}`} />
+                      )}
+                      {taskMutation.isPending && taskMutation.variables?.taskId === item.id && (
+                        <Loader2 className="absolute -inset-1 m-auto h-6 w-6 flex-shrink-0 text-muted-foreground animate-spin opacity-50" />
+                      )}
+                    </div>
+                    
                     <div>
                       <p className={`text-sm ${item.completed ? "line-through text-muted-foreground" : "text-foreground"}`}>{item.title}</p>
                       <p className={`text-xs ${item.completed ? "line-through text-muted-foreground/60" : "text-primary"}`}>{item.assignee.name} • {item.dueDate}</p>

@@ -35,12 +35,9 @@ export function AppSidebar() {
   return (
     <aside className="fixed left-0 top-0 z-40 flex h-screen w-64 flex-col border-r border-border bg-card">
       {/* Logo */}
-      <Link href="/" className="flex h-16 items-center gap-2.5 border-b border-border px-6 hover:bg-muted/50 transition-colors">
-        <span className="h-2 w-2 rounded-full bg-primary shrink-0" />
-        <div>
-          <span className="font-serif text-lg font-semibold text-foreground italic">Meetric</span>
-          <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Meeting Intelligence Hub</p>
-        </div>
+      <Link href="/" className="flex h-16 items-center gap-3 border-b border-border px-5 hover:bg-muted/50 transition-colors shrink-0">
+        <span className="h-2.5 w-2.5 rounded-full bg-primary shrink-0" />
+        <span className="font-serif text-xl font-semibold text-foreground italic leading-none">Meetric</span>
       </Link>
 
       {/* New Meeting Button */}
@@ -105,7 +102,7 @@ export function AppSidebar() {
           <div className="space-y-2.5">
             <div className="flex items-center gap-2">
               <Cpu className="h-3.5 w-3.5 text-primary shrink-0" />
-              <span className="text-[10px] text-foreground/70 font-medium">Llama 3.3-70B · BGE Reranker</span>
+              <span className="text-[10px] text-foreground/70 font-medium">Llama 3.3-70B · Llama 3.1-8b · BGE Reranker</span>
             </div>
             <div className="flex items-center gap-2">
               <Layers className="h-3.5 w-3.5 text-primary shrink-0" />
@@ -114,7 +111,7 @@ export function AppSidebar() {
           </div>
           <div className="pt-1.5 border-t border-primary/15 flex items-center justify-between">
             <span className="text-[9px] text-primary/60 font-bold uppercase tracking-widest">Meetric</span>
-            <span className="text-[9px] font-mono text-muted-foreground/50">v1.0 · .vtt · .txt</span>
+            <span className="text-[9px] font-mono text-muted-foreground/50"> v1.0 · .vtt · .txt</span>
           </div>
         </div>
       </div>

@@ -24,6 +24,7 @@ The system is partitioned into modular system layers to ensure separation of con
 - **MongoDB vs. PostgreSQL**: Chose MongoDB for its flexible document schema, allowing for the seamless storage of nested meeting metadata and variable-length segments.
 - **Next.js vs. React SPA**: Utilized Next.js for its robust server-side optimization and built-in routing, providing a more performant and scalable dashboard than traditional SPAs.
 - **MiniLM vs. Larger Embedding Models**: Deployed `all-MiniLM-L6-v2` to achieve sub-millisecond vector retrieval latency while maintaining high precision for short-form dialogue fragments.
+- **Secure API Design (POST over GET)**: Transitioned the `/chat` endpoint from `GET` to `POST` to ensure user queries are transmitted securely in the request body. This prevents exposure in server logs, browser history, and proxy layers, aligning with production-grade API security standards.
 
 ## 5. End-to-End Data Flow
 The system manages a complete lifecycle from raw input to verifiable intelligence. Understanding this flow is the prerequisite for all deep-dive sections that follow:

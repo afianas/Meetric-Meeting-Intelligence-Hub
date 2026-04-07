@@ -88,7 +88,7 @@ The system is built on the principle that **AI should never speak without proof*
 
 ### **Frameworks**
 - **Backend Application**: `FastAPI` (Asynchronous ASGI framework for high-throughput I/O)
-- **Web Application**: `Next.js 15` (App Router architecture with React Server Components)
+- **Web Application**: `Next.js 16` (App Router architecture with React Server Components)
 - **Server State**: `TanStack Query v5` (Asynchronous state management & caching)
 - **UI Components**: `Radix UI` & `Shadcn UI` (Unstyled primitives for accessible design)
 - **Data Visualization**: `Recharts` (Timeline & behavioral aggregation)
@@ -141,6 +141,10 @@ PINECONE_INDEX_NAME=your_index_name
 # Open a new terminal window or tab
 cd frontend
 npm install
+
+# Setup Frontend Env (Required for API connection)
+echo "NEXT_PUBLIC_API_URL=http://localhost:8000" > .env.local
+
 npm run dev
 ```
 
@@ -178,13 +182,24 @@ FastAPI (Python)
 | `POST` | `/upload` | Initiates backgrounded ingestion. Returns `job_id`. |
 | `GET` | `/jobs/{id}` | Polls for real-time progress and message updates. |
 | `GET` | `/meetings` | Returns archive with summary analytics. |
+| `GET` | `/meetings/{id}` | Returns a single meeting by ID. |
 | `DELETE` | `/meetings/{id}` | Synchronized deletion from MongoDB and Pinecone. |
+| `DELETE` | `/meetings/all` | Deletes all meetings from the database. |
 
-### **Intelligence & RAG**
+### **AI Search & Retrieval**
 | Method | Endpoint | Description |
 |:---:|:---|:---|
-| `GET` | `/chat` | **High-Recall RAG**: Focused, Global, and Summary query modes. |
+| `GET` | `/search` | Keyword-based search across meeting titles and analysis. |
+| `GET` | `/semantic-search` | Vector-based search across all meeting segments. |
+| `POST` | `/chat` | **High-Recall RAG**: Focused, Global, and Summary query modes. |
+
+### **Intelligence & Analytics**
+| Method | Endpoint | Description |
+|:---:|:---|:---|
 | `GET` | `/speaker-analytics` | Aggregates emotional distribution per speaker. |
+| `GET` | `/sentiment-flow` | Linearizes emotional timeline across all segments. |
+| `GET` | `/sentiment-insight` | Generates a high-level automated emotional summary. |
+| `POST` | `/update-task` | Updates the completion status of an action item. |
 | `POST` | `/download` | Generates professional **CSV** or **PDF** reports. |
 
 ---

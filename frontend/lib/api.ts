@@ -205,9 +205,10 @@ export async function uploadTranscript(file: File, meetingName?: string): Promis
 export const getJobStatus = (jobId: string) => apiFetch<BackendJobStatus>(`/jobs/${jobId}`);
 
 export const chat = (query: string, meetingId?: string) => {
-  const params = new URLSearchParams({ query });
-  if (meetingId) params.set("meeting_id", meetingId);
-  return apiFetch<ChatResponse>(`/chat?${params.toString()}`);
+  return apiFetch<ChatResponse>("/chat", {
+    method: "POST",
+    body: JSON.stringify({ query, meeting_id: meetingId }),
+  });
 };
 
 export const updateTaskStatus = (meetingId: string, taskId: number, status: string) =>

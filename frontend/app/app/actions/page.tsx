@@ -96,7 +96,7 @@ export default function ActionTrackerPage() {
       <Card>
         <CardContent className="p-6">
           <div className="flex items-center justify-between">
-            <h2 className="font-serif text-xl font-semibold text-foreground">Sprint Progress</h2>
+            <h2 className="font-serif text-xl font-semibold text-foreground">Progress</h2>
             <span className="text-sm text-muted-foreground">{stats.done} of {stats.total} complete</span>
           </div>
           <Progress value={stats.progress} className="mt-4 h-3 transition-all" />
@@ -164,22 +164,22 @@ export default function ActionTrackerPage() {
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="h-10 w-10 rounded-full hover:bg-primary/5 transition-all group"
+                      className="relative h-10 w-10 rounded-full hover:bg-primary/5 transition-all group"
                       onClick={(e) => {
                         e.stopPropagation();
                         handleToggle(item);
                       }}
                       disabled={isToggling}
-                      title={item.completed ? "Mark as pending" : "Mark as completed"}
+                      title={isVisuallyDone ? "Mark as pending" : "Mark as completed"}
                     >
-                      {isToggling ? (
-                        <div className="relative h-6 w-6 flex items-center justify-center">
-                          <div className="absolute inset-0 rounded-full border-2 border-primary/20" />
-                          <Loader2 className="h-4 w-4 animate-spin text-primary relative z-10" />
-                        </div>
+                      {isVisuallyDone ? (
+                        <CheckCircle2 className={`relative z-10 h-6 w-6 text-green-600 drop-shadow-sm group-hover:scale-110 transition-transform ${isToggling ? 'opacity-50' : ''}`} />
                       ) : (
-                        item.completed ? <CheckCircle2 className="h-6 w-6 text-green-600 drop-shadow-sm group-hover:scale-110 transition-transform" /> :
-                          <div className="h-6 w-6 rounded-full border-2 border-primary/40 hover:border-primary transition-colors bg-background shadow-inner group-hover:scale-110" />
+                        <div className={`relative z-10 h-6 w-6 rounded-full border-2 border-primary/40 hover:border-primary transition-colors bg-background shadow-inner group-hover:scale-110 ${isToggling ? 'opacity-50' : ''}`} />
+                      )}
+                      
+                      {isToggling && (
+                        <Loader2 className="absolute inset-0 m-auto h-8 w-8 animate-spin text-primary/30 z-0" />
                       )}
                     </Button>
                   </div>
