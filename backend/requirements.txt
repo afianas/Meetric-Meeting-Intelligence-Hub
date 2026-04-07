@@ -3,9 +3,8 @@ uvicorn[standard]
 pymongo
 certifi
 numpy
-sentence-transformers
-transformers
-torch>=2.0.0
+requests
+huggingface_hub
 pinecone
 groq
 python-dotenv
