@@ -5,8 +5,8 @@ certifi
 numpy
 sentence-transformers
 transformers
-torch
-pinecone-client
+torch>=2.0.0
+pinecone
 groq
 python-dotenv
 python-multipart

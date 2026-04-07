@@ -112,39 +112,48 @@ The system is built on the principle that **AI should never speak without proof*
 ```bash
 cd backend
 python -m venv venv
-source venv/bin/activate  # Windows: .\venv\Scripts\activate
+
+# Activate the virtual environment
+# On Mac/Linux: source venv/bin/activate
+# On Windows: .\venv\Scripts\activate
+
 pip install -r requirements.txt
 
-# Start the Backend (FastAPI)
+# Start the Backend Server
 uvicorn app.main:app --reload
 ```
 
-### 2. Pinecone Index Setup
-Create a new index in your Pinecone console with the following specification:
-- **Index Name**: (Matched with your `.env` file)
-- **Dimensions**: `384` (Required for `all-MiniLM-L6-v2`)
+### 2. Pinecone Vector DB Setup
+Create a free index in your Pinecone console with the following specification:
+- **Dimensions**: `384` (Required mapping for `all-MiniLM-L6-v2`)
 - **Metric**: `cosine`
-- **Cloud**: `AWS`
-- **Region**: `us-east-1` (or your preferred region)
+- **Cloud**: AWS (or preferred)
 - **Capacity Mode**: `Serverless`
 
-### 3. Environment Variables (`backend/.env`)
+### 3. Backend Environment Variables
+Create a file named `.env` horizontally inside the `backend` folder:
 ```env
 MONGO_URI=your_mongodb_uri
 GROQ_API_KEY=your_groq_api_key
 PINECONE_API_KEY=your_pinecone_api_key
 PINECONE_INDEX_NAME=your_index_name
+HF_TOKEN=your_huggingface_token  # Optional: speeds up model downloads and prevents rate limits
 ```
 
-### 4. Frontend
+### 4. Frontend Application
+Open a new, separate terminal window for the frontend:
 ```bash
-# Open a new terminal window or tab
 cd frontend
 npm install
+```
 
-# Setup Frontend Env (Required for API connection)
-echo "NEXT_PUBLIC_API_URL=http://localhost:8000" > .env.local
+Next, create a file named `.env.local` in the `frontend` root directory and add the backend connection URL:
+```env
+NEXT_PUBLIC_API_URL=http://localhost:8000
+```
 
+Finally, start the dashboard:
+```bash
 npm run dev
 ```
 

@@ -264,12 +264,17 @@ export default function UploadPage() {
                 <CloudUpload className={`h-12 w-12 transition-colors duration-500 ${isDragging ? "text-primary-foreground" : "text-muted-foreground group-hover:text-primary"}`} />
               </div>
 
-              <div className="mt-10 space-y-3 px-4">
+              <div className="mt-10 space-y-3 px-4 flex flex-col items-center">
                 <h3 className="text-2xl font-bold text-foreground tracking-tight">Drop your transcripts</h3>
                 <p className="text-sm text-muted-foreground font-light max-w-sm mx-auto leading-relaxed">
                   Support for multi-file <Badge variant="secondary" className="mx-1 font-mono text-[10px] bg-primary/5 text-primary border-none">.vtt</Badge> and
                   <Badge variant="secondary" className="mx-1 font-mono text-[10px] bg-primary/5 text-primary border-none">.txt</Badge> indexing.
                 </p>
+                
+                <div className="inline-flex items-center gap-2 px-4 py-2.5 mt-8 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-600 dark:text-amber-400 max-w-md text-left transition-all hover:bg-amber-500/15">
+                  <span className="text-lg shrink-0">⚠️</span>
+                  <span className="text-[11px] font-medium leading-relaxed"><b>Demo Mode:</b> Preloaded meetings are available for testing. Large uploads or queries may take additional processing time due to API limits.</span>
+                </div>
               </div>
 
               <Button
