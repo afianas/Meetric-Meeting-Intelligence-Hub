@@ -18,10 +18,12 @@ from app.routes import upload, download, meetings, search, chat, analytics, task
 
 app = FastAPI()
 
-frontend_url = os.getenv("FRONTEND_URL", "http://localhost:3000")
-origins = [frontend_url]
-if frontend_url != "http://localhost:3000":
-    origins.append("http://localhost:3000")
+frontend_url = os.getenv("FRONTEND_URL", "http://localhost:3000").strip().rstrip("/")
+origins = [
+    frontend_url,
+    "http://localhost:3000",
+    "http://localhost:5173",
+]
 
 app.add_middleware(
     CORSMiddleware,

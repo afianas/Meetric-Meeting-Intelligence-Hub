@@ -148,7 +148,7 @@ export default function DashboardPage() {
         <AlertCircle className="h-10 w-10 text-red-400" />
         <h2 className="text-lg font-semibold text-foreground">Could not load meetings</h2>
         <p className="text-sm text-muted-foreground">{error instanceof Error ? error.message : String(error)}</p>
-        <p className="text-xs text-muted-foreground">Make sure the backend is running at <code className="bg-muted px-1 rounded">localhost:8000</code></p>
+        <p className="text-xs text-muted-foreground italic">Check your connection to the intelligence server.</p>
         <Button onClick={() => load()} className="mt-2">Retry</Button>
       </div>
     )
