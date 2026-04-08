@@ -4,7 +4,7 @@
 ## 🌐 Live URL, visit my site: [meetric-meeting-intelligence-hub.vercel.app](https://meetric-meeting-intelligence-hub.vercel.app)
 
 > [!IMPORTANT]
-> **Performance Note**: This system uses real-time AI models via Hugging Face. If the app feels initialy slow, it is likely because the Inference API models are "waking up" from idle. 
+> **Performance Note**: The live demo runs on a HuggingFace Spaces deploy branch. If the app feels initially slow, models may be waking up from idle. The local codebase runs all models (all-MiniLM-L6-v2, BGE Reranker, DistilBERT) locally via SentenceTransformers with no Inference API dependency. 
 
 #### Project Demonstration
 
