@@ -4,7 +4,7 @@
 ## 🌐 Live URL, visit my site: [meetric-meeting-intelligence-hub.vercel.app](https://meetric-meeting-intelligence-hub.vercel.app)
 
 > [!IMPORTANT]
-> **Performance Note**: The live demo runs on a HuggingFace Spaces deploy branch. If the app feels initially slow, models may be waking up from idle. The local codebase runs all models (all-MiniLM-L6-v2, BGE Reranker, DistilBERT) locally via SentenceTransformers with no Inference API dependency. 
+> **Performance Note**: The live demo uses the HuggingFace Inference API (deploy branch) for models. If the app feels initially slow, models may be waking up from idle. The local codebase (main branch) runs all models — all-MiniLM-L6-v2, BGE Reranker, DistilBERT — locally via SentenceTransformers with no Inference API dependency. 
 
 #### Project Demonstration
 
