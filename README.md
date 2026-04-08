@@ -1,5 +1,10 @@
-## Project Title
-### Meetric Intelligence Hub: Turn Hours Of Dialogue Into Minutes Of Clarity
+
+## Project Title: Meetric Intelligence Hub: Turn Hours Of Dialogue Into Minutes Of Clarity
+
+## 🌐 Live URL, visit my site: [meetric-meeting-intelligence-hub.vercel.app](https://meetric-meeting-intelligence-hub.vercel.app)
+
+> [!IMPORTANT]
+> **Performance Note**: This system uses real-time AI models via Hugging Face. If the app feels initialy slow, it is likely because the Inference API models are "waking up" from idle. 
 
 #### Project Demonstration
 
