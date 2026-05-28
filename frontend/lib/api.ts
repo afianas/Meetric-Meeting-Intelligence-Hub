@@ -135,16 +135,20 @@ function getStatus(item: BackendActionItem): "DONE" | "PENDING" | "OVERDUE" {
   return "PENDING";
 }
 
+export function getDominantEmotion(segments: BackendSegment[]): string {
+  const counts: Record<string, number> = {};
+  segments.forEach(s => counts[s.emotion] = (counts[s.emotion] || 0) + 1);
+  return Object.entries(counts).sort((a, b) => b[1] - a[1])[0]?.[0] || "neutral";
+}
+
+export function extractUniqueSpeakers(segments: BackendSegment[]): string[] {
+  return Array.from(new Set(segments.map(s => s.speaker).filter(Boolean)));
+}
+
 export function normalizeMeeting(m: BackendMeeting): MappedMeeting {
   const analysis = m.analysis || {} as BackendAnalysis;
   const segments = m.segments || [];
-  
-  // Find dominant emotion
-  const counts: Record<string, number> = {};
-  segments.forEach(s => counts[s.emotion] = (counts[s.emotion] || 0) + 1);
-  const domEmotion = Object.entries(counts).sort((a, b) => b[1] - a[1])[0]?.[0] || "neutral";
-
-  const speakers = Array.from(new Set(segments.map(s => s.speaker).filter(Boolean)));
+  const speakers = extractUniqueSpeakers(segments);
 
   return {
     id: m._id,
@@ -152,13 +156,14 @@ export function normalizeMeeting(m: BackendMeeting): MappedMeeting {
     date: analysis.date || "Unknown",
     speakers: analysis.speakers_identified || speakers.length,
     words: analysis.word_count || 0,
-    dominantEmotion: domEmotion,
+    dominantEmotion: getDominantEmotion(segments),
     avatars: speakers.slice(0, 3),
     totalDecisions: (analysis.decisions || []).length,
     totalActionItems: (analysis.action_items || []).length,
     pendingActionItems: (analysis.action_items || []).filter(i => !isTaskCompleted(i)).length,
   };
 }
+
 
 export function normalizeActionItem(item: BackendActionItem, idx: number, mId: string, mName: string): MappedActionItem {
   return {

@@ -17,14 +17,12 @@ export interface ActionItem {
   id: string | number
   title: string
   status: string
-  statusColor: string
   assignee: {
     name: string
     role: string
     avatar: string
   }
   dueDate: string
-  dueDateColor: string
   completed: boolean
 }
 
@@ -88,30 +86,24 @@ const INITIAL_ACTIONS: ActionItem[] = [
     id: "IM-402",
     title: "Finalize Q3 Editorial Calendar & Content Pillars",
     status: "OVERDUE",
-    statusColor: "bg-red-100 text-red-700",
     assignee: { name: "Sarah Chen", role: "Editor-in-Chief", avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=50&h=50&fit=crop&crop=face" },
     dueDate: "Oct 12, 2023",
-    dueDateColor: "text-red-600",
     completed: false,
   },
   {
     id: "IM-415",
     title: "Review sentiment analysis for \"Climate Tech\"",
     status: "PENDING",
-    statusColor: "bg-amber-100 text-amber-700",
     assignee: { name: "James Miller", role: "Senior Analyst", avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=50&h=50&fit=crop&crop=face" },
     dueDate: "Oct 24, 2023",
-    dueDateColor: "text-muted-foreground",
     completed: false,
   },
   {
     id: "IM-398",
     title: "Onboard new freelance illustrators for the annual session",
     status: "DONE",
-    statusColor: "bg-green-100 text-green-700",
     assignee: { name: "Elena Rodriguez", role: "Art Director", avatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=50&h=50&fit=crop&crop=face" },
     dueDate: "Oct 05, 2023",
-    dueDateColor: "text-muted-foreground",
     completed: true,
   },
 ]
@@ -141,6 +133,15 @@ const INITIAL_DECISIONS: Decision[] = [
     actionItem: { text: "Action item assigned to Sarah T.", avatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=50&h=50&fit=crop&crop=face" },
   },
 ]
+
+export function toggleActionProperties(action: ActionItem): ActionItem {
+  const completed = !action.completed;
+  return {
+    ...action,
+    completed,
+    status: completed ? "DONE" : "PENDING",
+  };
+}
 
 export function useMockData() {
   const [meetings, setMeetings] = useState<Meeting[]>([])
@@ -188,14 +189,7 @@ export function useMockData() {
 
   const toggleAction = (id: string | number) => {
     const updatedActions = actions.map(action =>
-      action.id === id
-        ? {
-          ...action,
-          completed: !action.completed,
-          status: !action.completed ? "DONE" : "PENDING",
-          statusColor: !action.completed ? "bg-green-100 text-green-700" : "bg-amber-100 text-amber-700"
-        }
-        : action
+      action.id === id ? toggleActionProperties(action) : action
     )
     setActions(updatedActions)
     localStorage.setItem("meetric_actions", JSON.stringify(updatedActions))
