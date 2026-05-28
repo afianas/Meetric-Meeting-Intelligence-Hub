@@ -1,5 +1,7 @@
 const BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
+const MAX_PREVIEW_AVATARS = 3;
+
 /**
  * BACKEND TYPES (Direct from FastAPI)
  */
@@ -153,7 +155,7 @@ export function normalizeMeeting(m: BackendMeeting): MappedMeeting {
     speakers: analysis.speakers_identified || speakers.length,
     words: analysis.word_count || 0,
     dominantEmotion: domEmotion,
-    avatars: speakers.slice(0, 3),
+    avatars: speakers.slice(0, MAX_PREVIEW_AVATARS),
     totalDecisions: (analysis.decisions || []).length,
     totalActionItems: (analysis.action_items || []).length,
     pendingActionItems: (analysis.action_items || []).filter(i => !isTaskCompleted(i)).length,

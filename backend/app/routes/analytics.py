@@ -2,6 +2,10 @@ from fastapi import APIRouter, Query
 from typing import Optional
 from app.services.storage_service import get_all_meetings, get_meeting
 
+CONFLICT_THRESHOLD_PCT = 20
+AGREEMENT_THRESHOLD_PCT = 60
+CONCERN_THRESHOLD_PCT = 25
+
 router = APIRouter()
 
 
@@ -111,11 +115,11 @@ def sentiment_insight(meeting_id: Optional[str] = Query(None)):
     agreement_pct = (total_counts["agreement"] / total_segments) * 100
     concern_pct = (total_counts["concern"] / total_segments) * 100
 
-    if conflict_pct > 20:
+    if conflict_pct > CONFLICT_THRESHOLD_PCT:
         insight = f"The interaction exhibits high friction ({conflict_pct:.1f}% conflict), suggesting strong disagreements during key discussions."
-    elif agreement_pct > 60:
+    elif agreement_pct > AGREEMENT_THRESHOLD_PCT:
         insight = f"The environment is exceptionally collaborative, with {agreement_pct:.1f}% positive consensus across the dialogue."
-    elif concern_pct > 25:
+    elif concern_pct > CONCERN_THRESHOLD_PCT:
         insight = f"While professional, the conversation is marked by notable caution and risk-assessment ({concern_pct:.1f}% concern)."
     elif top_emotion == "agreement":
         insight = "The conversation remained mostly collaborative with steady progress towards consensus."

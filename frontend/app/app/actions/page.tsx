@@ -35,7 +35,7 @@ export default function ActionTrackerPage() {
   const [statusFilter, setStatusFilter] = useState<"All" | "Pending" | "Done">("All")
   const [ownerFilter, setOwnerFilter] = useState("all")
 
-  const uniqueOwners = useMemo(() => Array.from(new Set(items.map(i => i.assignee.name))), [items])
+  const uniqueOwners = useMemo(() => Array.from(new Set(items.map(item => item.assignee.name))), [items])
 
   const filtered = useMemo(() => items.filter(item => {
     const matchStatus = statusFilter === "All" || (statusFilter === "Pending" && !item.completed) || (statusFilter === "Done" && item.completed)
